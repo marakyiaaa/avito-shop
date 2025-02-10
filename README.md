@@ -1,1 +1,1 @@
-# winter_avito
+# avito-shop
