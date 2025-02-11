@@ -1,11 +1,9 @@
 package handlers
 
-//ХЗ НОВОЕ
-
 import (
 	"avito_shop/internal/models/entities"
 	"avito_shop/internal/service"
-	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
@@ -18,36 +16,37 @@ func NewAuthHandlers(authService service.AuthService) *AuthHandlers {
 }
 
 // RegisterHandler Регистрация пользователя
-func (h *AuthHandlers) RegisterHandler(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandlers) RegisterHandler(c *gin.Context) {
 	var user entities.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	err := h.authService.CreateUser(r.Context(), &user)
+	err := h.authService.CreateUser(c, &user)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+
+	c.Status(http.StatusOK)
 }
 
 // LoginHandler Логин пользователя
-func (h *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandlers) LoginHandler(c *gin.Context) {
 	var credentials struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&credentials); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	user, token, err := h.authService.AuthenticateUser(r.Context(), credentials.Username, credentials.Password)
+	user, token, err := h.authService.AuthenticateUser(c, credentials.Username, credentials.Password)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -56,20 +55,20 @@ func (h *AuthHandlers) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		"token":   token,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	c.JSON(http.StatusOK, response)
 }
 
-func (h *AuthHandlers) GetUserBalanceHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("user_id").(int)
+// GetUserBalanceHandler Получение баланса пользователя
+func (h *AuthHandlers) GetUserBalanceHandler(c *gin.Context) {
+	userID, ok := c.Get("user_id")
 	if !ok {
-		http.Error(w, "Invalid user ID", http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
 		return
 	}
 
-	user, err := h.authService.GetUserBalance(r.Context(), userID)
+	user, err := h.authService.GetUserBalance(c, userID.(int))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -78,6 +77,5 @@ func (h *AuthHandlers) GetUserBalanceHandler(w http.ResponseWriter, r *http.Requ
 		"balance": user.Coins,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	c.JSON(http.StatusOK, response)
 }

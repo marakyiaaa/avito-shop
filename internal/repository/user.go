@@ -5,8 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	_ "github.com/lib/pq"
 	"log"
-	"time"
 )
 
 type UserRepository interface {
@@ -28,10 +28,11 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 // Регистрация пользователя
+// Проблема: SQL-запрос содержит 5 параметров, но передается только 3.
 func (r *userRepository) CreateUser(ctx context.Context, user *entities.User) error {
 	const query = `INSERT INTO users (username, password, coins)
               VALUES ($1, $2, $3) RETURNING id`
-	err := r.db.QueryRowContext(ctx, query, user.Username, user.Coins, user.Password, time.Now(), time.Now()).Scan(&user.ID)
+	err := r.db.QueryRowContext(ctx, query, user.Username, user.Password, user.Coins).Scan(&user.ID)
 	return err
 }
 

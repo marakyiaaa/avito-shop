@@ -3,42 +3,58 @@ package main
 import (
 	"avito_shop/internal/config"
 	"avito_shop/internal/handlers"
-	"avito_shop/internal/middlware"
+	"avito_shop/internal/middleware"
 	"avito_shop/internal/repository"
 	"avito_shop/internal/service"
+	"avito_shop/migrations"
 	"database/sql"
+	"fmt"
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
+	// Загружаем конфигурацию
 	cfg := config.Load()
 
-	// Подключение к базе данных
-	db, err := sql.Open("postgres", "user="+cfg.DBUser+" password="+cfg.DBPassword+" dbname="+cfg.DBName+" host="+cfg.DBHost+" port="+cfg.DBPort+" sslmode=disable")
+	// Инициализация базы данных
+	db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Ошибка подключения к базе данных: %v", err)
 	}
 	defer db.Close()
 
-	// Инициализация репозиториев и сервисов
+	// Инициализация репозиториев
 	userRepo := repository.NewUserRepository(db)
-	authService := service.NewAuthService(userRepo, "yourSecretKey")
 
-	// Инициализация обработчиков
-	authHandlers := handlers.NewAuthHandlers(authService)
+	// Инициализация сервиса аутентификации
+	authService := service.NewAuthService(userRepo, cfg.JWTSecretKey)
 
-	// Настройка маршрутов
-	router := mux.NewRouter()
-	router.HandleFunc("/register", authHandlers.RegisterHandler).Methods("POST")
-	router.HandleFunc("/login", authHandlers.LoginHandler).Methods("POST")
+	// Применяем миграции
+	migrations.InitDB(cfg)
 
-	// Пример защищенного маршрута
-	protected := router.PathPrefix("/protected").Subrouter()
-	protected.Use(middlware.NewCheckAuth("yourSecretKey"))
-	protected.HandleFunc("/user-balance", authHandlers.GetUserBalanceHandler).Methods("GET")
+	// Создаем маршруты
+	r := mux.NewRouter()
+
+	// Регистрируем обработчики
+	r.HandleFunc("/register", handlers.RegisterHandler(authService)).Methods("POST")
+	r.HandleFunc("/login", handlers.LoginHandler(authService)).Methods("POST")
+	r.HandleFunc("/balance", middleware.NewCheckAuth(cfg.JWTSecretKey)(handlers.BalanceHandler(authService))).Methods("GET")
+	r.HandleFunc("/send", middleware.NewCheckAuth(cfg.JWTSecretKey)(handlers.SendCoinsHandler(authService))).Methods("POST")
 
 	// Запуск сервера
-	log.Fatal(http.ListenAndServe(":"+cfg.ServerPort, router))
+	serverPort := os.Getenv("SERVER_PORT")
+	if serverPort == "" {
+		serverPort = "8080"
+	}
+
+	log.Printf("Starting server on port %s...", serverPort)
+	err = http.ListenAndServe(":"+serverPort, r)
+	if err != nil {
+		log.Fatalf("Ошибка при запуске сервера: %v", err)
+	}
 }

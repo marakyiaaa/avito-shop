@@ -19,5 +19,6 @@ CREATE TABLE transactions (
                               timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- DROP TABLE IF EXISTS users;
 
 -- goose
