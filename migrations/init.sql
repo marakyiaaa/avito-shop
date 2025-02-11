@@ -18,3 +18,6 @@ CREATE TABLE transactions (
                               amount INT NOT NULL,
                               timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+-- goose

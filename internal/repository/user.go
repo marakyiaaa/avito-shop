@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 	"time"
 )
 
@@ -21,7 +22,8 @@ type userRepository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) UserRepository { //лучше возвращать интерфейс UserRepository, а не *userRepository. Это даёт больше гибкости.
+// Лучше возвращать интерфейс UserRepository, а не *userRepository - это даёт больше гибкости
+func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
@@ -32,20 +34,6 @@ func (r *userRepository) CreateUser(ctx context.Context, user *entities.User) er
 	err := r.db.QueryRowContext(ctx, query, user.Username, user.Coins, user.Password, time.Now(), time.Now()).Scan(&user.ID)
 	return err
 }
-
-//// Регистрация пользователя с использованием Squirrel
-//func (r *userRepository) CreateUser(ctx context.Context, user *entities.User) error {
-//	query, args, err := squirrel.Insert("users").
-//		Columns("username", "password", "coins").
-//		Values(user.Username, user.Password, user.Coins).
-//		Suffix("RETURNING id").
-//		PlaceholderFormat(squirrel.Dollar).
-//		ToSql()
-//	if err != nil {
-//		return err
-//	}
-//	return r.db.QueryRowContext(ctx, query, args...).Scan(&user.ID)
-//}
 
 // GetUserByID Получить пользователя по ID
 func (r *userRepository) GetUserByID(ctx context.Context, id int) (*entities.User, error) {
@@ -65,13 +53,14 @@ func (r *userRepository) GetUserByID(ctx context.Context, id int) (*entities.Use
 // GetUserByUsername Получить пользователя по логину
 func (r *userRepository) GetUserByUsername(ctx context.Context, username string) (*entities.User, error) {
 	user := &entities.User{}
-	const query = `SELECT id, username, coins FROM users WHERE username = $1`
+	const query = `SELECT id, username, password, coins FROM users WHERE username = $1`
 	row := r.db.QueryRowContext(ctx, query, username)
-	err := row.Scan(&user.ID, &user.Username, &user.Coins)
+	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.Coins)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil // если пользователя нет, возвращаем nil
 	}
 	if err != nil {
+		log.Println("Ошибка при запросе")
 		return nil, err //ошибки попозже
 	}
 	return user, nil
@@ -107,4 +96,18 @@ func (r *userRepository) UpdateUserBalance(ctx context.Context, id int, newBalan
 //	}
 //
 //	return users, nil
+//}
+
+//// Регистрация пользователя с использованием Squirrel
+//func (r *userRepository) CreateUser(ctx context.Context, user *entities.User) error {
+//	query, args, err := squirrel.Insert("users").
+//		Columns("username", "password", "coins").
+//		Values(user.Username, user.Password, user.Coins).
+//		Suffix("RETURNING id").
+//		PlaceholderFormat(squirrel.Dollar).
+//		ToSql()
+//	if err != nil {
+//		return err
+//	}
+//	return r.db.QueryRowContext(ctx, query, args...).Scan(&user.ID)
 //}

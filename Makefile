@@ -1,15 +1,34 @@
-.PHONY: lint
-lint:
-	golangci-lint run -v --color=always --timeout 4m ./...
+include .env.local
 
-.PHONY: build
 build:
-	go build -o bin/main main.go
+	@docker compose build
 
-.PHONY: run
 run:
-	go run main.go
+	@docker compose up -d
 
-.PHONY: clean
-clean:
-	rm -rf bin
+reboot:
+	@docker compose down
+
+#topic:
+#	@docker exec kafka kafka-topics --bootstrap-server kafka:9092 --create --topic orders
+
+go:
+	@go run cmd/app/main.go
+
+#test:
+#	@go test -v internal/service/service_test.go internal/service/service.go
+#
+#cover:
+#	@go test -cover internal/service/service_test.go internal/service/service.go
+#
+#brew_wrk:
+#	@brew install wrk
+#
+#wrk:
+#	@wrk -t4 -c200 -d30s http://localhost:8080/api/orders
+
+check:
+	@golangci-lint run
+
+
+.PHONY: build run reboot topic go test cover brew_wrk wrk check
