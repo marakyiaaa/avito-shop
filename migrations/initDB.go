@@ -2,39 +2,26 @@ package migrations
 
 import (
 	"avito_shop/internal/config"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"database/sql"
+	"fmt"
+	_ "github.com/golang-migrate/migrate/v4/source/file" // Импортируем источник миграций через файл
+	"github.com/pressly/goose"
 	"log"
 )
 
-// InitDB инициализирует базу данных и выполняет миграции.
-func InitDB(config *config.Config) *migrate.Migrate {
-	// Формируем строку подключения
-	connStr := "postgres://" + config.DBUser + ":" + config.DBPassword + "@" + config.DBHost + ":" + config.DBPort + "/" + config.DBName + "?sslmode=disable"
-
-	// Создаем источник миграций
-	source, err := file.New("file://migrations")
+func InitDB(cfg *config.Config, migrationsPath string) {
+	// Подключение к базе данных
+	db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName))
 	if err != nil {
-		log.Fatalf("Ошибка создания источника миграций: %v", err)
+		log.Fatalf("Ошибка подключения к базе данных: %v", err)
 	}
+	defer db.Close()
 
-	// Создаем подключение к базе данных
-	db, err := postgres.WithInstance(config.DBConnection(), &postgres.Config{})
+	err = goose.Up(db, migrationsPath)
 	if err != nil {
-		log.Fatalf("Ошибка подключения к БД: %v", err)
-	}
-
-	// Создаем миграцию
-	m, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", db)
-	if err != nil {
-		log.Fatalf("Ошибка создания миграций: %v", err)
-	}
-
-	// Запускаем миграции
-	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
 		log.Fatalf("Ошибка применения миграций: %v", err)
 	}
 
-	return m
+	log.Println("Миграции успешно применены!")
 }

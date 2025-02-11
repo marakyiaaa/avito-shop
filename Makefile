@@ -31,4 +31,14 @@ check:
 	@golangci-lint run
 
 
+#goose create create_orders_table sql
+
+#Откат миграций - goose down
+
+
+#goose up
+#Goose сам будет отслеживать номера версий миграций и применять их в правильной последовательности.
+
+
+
 .PHONY: build run reboot topic go test cover brew_wrk wrk check

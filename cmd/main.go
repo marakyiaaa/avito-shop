@@ -9,10 +9,9 @@ import (
 	"avito_shop/migrations"
 	"database/sql"
 	"fmt"
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"log"
-	"net/http"
 	"os"
 )
 
@@ -20,7 +19,10 @@ func main() {
 	// Загружаем конфигурацию
 	cfg := config.Load()
 
-	// Инициализация базы данных
+	// Инициализация базы данных и применение миграций
+	migrations.InitDB(cfg, "./migrations")
+
+	// Подключение базы данных
 	db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName))
 	if err != nil {
@@ -34,26 +36,24 @@ func main() {
 	// Инициализация сервиса аутентификации
 	authService := service.NewAuthService(userRepo, cfg.JWTSecretKey)
 
-	// Применяем миграции
-	migrations.InitDB(cfg)
+	authHandlers := handlers.NewAuthHandlers(authService)
 
-	// Создаем маршруты
-	r := mux.NewRouter()
+	r := gin.Default()
 
 	// Регистрируем обработчики
-	r.HandleFunc("/register", handlers.RegisterHandler(authService)).Methods("POST")
-	r.HandleFunc("/login", handlers.LoginHandler(authService)).Methods("POST")
-	r.HandleFunc("/balance", middleware.NewCheckAuth(cfg.JWTSecretKey)(handlers.BalanceHandler(authService))).Methods("GET")
-	r.HandleFunc("/send", middleware.NewCheckAuth(cfg.JWTSecretKey)(handlers.SendCoinsHandler(authService))).Methods("POST")
+	r.POST("/register", authHandlers.RegisterHandler)
+	r.POST("/login", authHandlers.LoginHandler)
+	r.GET("/balance", middleware.NewCheckAuth(cfg.JWTSecretKey), authHandlers.GetUserBalanceHandler)
 
-	// Запуск сервера
+	// Определяем порт сервера
 	serverPort := os.Getenv("SERVER_PORT")
 	if serverPort == "" {
 		serverPort = "8080"
 	}
 
-	log.Printf("Starting server on port %s...", serverPort)
-	err = http.ListenAndServe(":"+serverPort, r)
+	// Запуск сервера
+	log.Printf("Сервер запущен на порту %s...", serverPort)
+	err = r.Run(":" + serverPort)
 	if err != nil {
 		log.Fatalf("Ошибка при запуске сервера: %v", err)
 	}

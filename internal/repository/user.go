@@ -22,13 +22,12 @@ type userRepository struct {
 	db *sql.DB
 }
 
-// Лучше возвращать интерфейс UserRepository, а не *userRepository - это даёт больше гибкости
+// NewUserRepository Лучше возвращать интерфейс UserRepository, а не *userRepository - это даёт больше гибкости
 func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-// Регистрация пользователя
-// Проблема: SQL-запрос содержит 5 параметров, но передается только 3.
+// CreateUser Регистрация пользователя
 func (r *userRepository) CreateUser(ctx context.Context, user *entities.User) error {
 	const query = `INSERT INTO users (username, password, coins)
               VALUES ($1, $2, $3) RETURNING id`
