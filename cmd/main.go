@@ -19,9 +19,6 @@ func main() {
 	// Загружаем конфигурацию
 	cfg := config.Load()
 
-	// Инициализация базы данных и применение миграций
-	migrations.InitDB(cfg, "./migrations")
-
 	// Подключение базы данных
 	db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName))
@@ -29,6 +26,9 @@ func main() {
 		log.Fatalf("Ошибка подключения к базе данных: %v", err)
 	}
 	defer db.Close()
+
+	// Инициализация базы данных и применение миграций
+	migrations.InitDB(db, cfg, "./migrationsD")
 
 	// Инициализация репозиториев
 	userRepo := repository.NewUserRepository(db)

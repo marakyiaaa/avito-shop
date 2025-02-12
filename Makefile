@@ -9,6 +9,12 @@ run:
 reboot:
 	@docker compose down
 
+del:
+	@docker compose down -v  # Удаляет контейнеры и тома (вся БД удалится)
+#docker compose up       # Запускает заново
+
+#docker volume ls
+
 #topic:
 #	@docker exec kafka kafka-topics --bootstrap-server kafka:9092 --create --topic orders
 
@@ -26,6 +32,10 @@ go:
 #
 #wrk:
 #	@wrk -t4 -c200 -d30s http://localhost:8080/api/orders
+
+
+
+
 
 check:
 	@golangci-lint run
