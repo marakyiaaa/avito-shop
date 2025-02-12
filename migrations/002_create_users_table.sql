@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     id       SERIAL PRIMARY KEY,
     username VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255)        NOT NULL,
-    coins    INT DEFAULT 1000
+    balance    INT DEFAULT 1000
 );
 
 INSERT INTO goose_db_version (version_id, is_applied)

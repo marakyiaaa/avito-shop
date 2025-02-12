@@ -28,22 +28,29 @@ func main() {
 	defer db.Close()
 
 	// Инициализация базы данных и применение миграций
-	migrations.InitDB(db, cfg, "./migrationsD")
+	migrations.InitDB(db, cfg, "./migrations")
 
 	// Инициализация репозиториев
 	userRepo := repository.NewUserRepository(db)
+	//itemRepo := repository.NewItemRepository(db)
+	//transactionRepo := repository.NewTransactionRepository(db)
 
 	// Инициализация сервиса аутентификации
 	authService := service.NewAuthService(userRepo, cfg.JWTSecretKey)
+	//shopService := service.NewShopService(userRepo, itemRepo, transactionRepo)
 
+	// Инициализация обработчиков
 	authHandlers := handlers.NewAuthHandlers(authService)
+	//shopHandlers := handlers.NewShopHandlers(shopService)
 
 	r := gin.Default()
+	r.Use(middleware.NewCORS())
 
 	// Регистрируем обработчики
-	r.POST("/register", authHandlers.RegisterHandler)
-	r.POST("/login", authHandlers.LoginHandler)
-	r.GET("/balance", middleware.NewCheckAuth(cfg.JWTSecretKey), authHandlers.GetUserBalanceHandler)
+	r.POST("/api/auth", authHandlers.AuthHandler)
+	//r.GET("/api/info", middleware.NewCheckAuth(cfg.JWTSecretKey), shopHandlers.GetInfoHandler)
+	//r.POST("/api/sendCoin", middleware.NewCheckAuth(cfg.JWTSecretKey), shopHandlers.SendCoinHandler)
+	//r.GET("/api/buy/:item", middleware.NewCheckAuth(cfg.JWTSecretKey), shopHandlers.BuyItemHandler)
 
 	// Определяем порт сервера
 	serverPort := os.Getenv("SERVER_PORT")

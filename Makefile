@@ -11,9 +11,12 @@ reboot:
 
 del:
 	@docker compose down -v  # Удаляет контейнеры и тома (вся БД удалится)
-#docker compose up       # Запускает заново
 
-#docker volume ls
+inf:
+	docker ps -a
+	docker images
+	docker volume ls
+
 
 #topic:
 #	@docker exec kafka kafka-topics --bootstrap-server kafka:9092 --create --topic orders
@@ -52,3 +55,5 @@ check:
 
 
 .PHONY: build run reboot topic go test cover brew_wrk wrk check
+
+# psql -U postgres -d shop

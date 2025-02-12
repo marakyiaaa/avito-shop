@@ -12,11 +12,9 @@ import (
 )
 
 type AuthService interface {
-	CreateUser(ctx context.Context, user *entities.User) error
 	AuthenticateUser(ctx context.Context, username, password string) (*entities.User, string, error)
 	GenerateJWT(user *entities.User) (string, error)
-
-	GetUserBalance(ctx context.Context, userID int) (*entities.User, error)
+	//GetUserBalance(ctx context.Context, userID int) (*entities.User, error)
 }
 
 type authService struct {
@@ -28,48 +26,35 @@ func NewAuthService(userRepo repository.UserRepository, secretKey string) AuthSe
 	return &authService{userRepo: userRepo, secretKey: secretKey}
 }
 
-// CreateUser Регистрация пользователя
-func (s *authService) CreateUser(ctx context.Context, user *entities.User) error {
-	//Существует ли username
-	existUser, err := s.userRepo.GetUserByUsername(ctx, user.Username)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return err
-	}
-
-	if existUser != nil {
-		return errors.New("username already taken")
-	}
-
-	//хэшируем пароль
-	hashPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Printf("Ошибка хеширования пароля: %v", err)
-		return errors.New("failed to create user")
-	}
-	//Записываем хэшированный пароль
-	user.Password = string(hashPassword)
-
-	/// Создаем пользователя в БД
-	if err := s.userRepo.CreateUser(ctx, user); err != nil {
-		log.Printf("Ошибка создания пользователя: %v", err)
-		return errors.New("failed to create user")
-	}
-	return nil
-}
-
-// AuthenticateUser Проверка пользователя и создание токена
+// AuthenticateUser Проверка пользователя, регистрация при необходимости и генерация токена
 func (s *authService) AuthenticateUser(ctx context.Context, username, password string) (*entities.User, string, error) {
 	// Получаем пользователя из БД
 	user, err := s.userRepo.GetUserByUsername(ctx, username)
-	if err != nil {
-		log.Printf("Ошибка при получении пользователя: %v", err)   // Логируем ошибку
-		return nil, "", errors.New("invalid username or password") // но не раскрываем детали пользователю
+
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.Printf("Ошибка при получении пользователя: %v", err) // Логируем ошибку
+		return nil, "", errors.New("ошибка аутентификации: invalid username or password")
 	}
 
-	//// Если пользователь не найден
-	//if user == nil {
-	//	return nil, errors.New("invalid username or password") // преоверка в GetUserByUsername есть
-	//}
+	// Если пользователь не найден — регистрируем его
+	if user == nil {
+		newUser := &entities.User{
+			Username: username,
+			Password: password,
+			Balance:  1000,
+		}
+
+		if err := s.createUser(ctx, newUser); err != nil {
+			return nil, "", err
+		}
+
+		// После создания пользователя, снова получаем его из базы данных
+		user, err = s.userRepo.GetUserByUsername(ctx, username)
+		if err != nil {
+			log.Printf("Ошибка при получении пользователя после регистрации: %v", err)
+			return nil, "", errors.New("ошибка аутентификации: failed to retrieve user after registration")
+		}
+	}
 
 	// Проверяем пароль
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
@@ -94,15 +79,43 @@ func (s *authService) GenerateJWT(user *entities.User) (string, error) {
 
 	tokenString, err := token.SignedString([]byte(s.secretKey))
 	if err != nil {
-		return "", err
+		log.Printf("Ошибка генерации JWT: %v", err)
+		return "", errors.New("failed to generate token")
 	}
 	return tokenString, nil
 }
 
-func (s *authService) GetUserBalance(ctx context.Context, userID int) (*entities.User, error) {
-	user, err := s.userRepo.GetUserByID(ctx, userID)
+// CreateUser Регистрация пользователя
+func (s *authService) createUser(ctx context.Context, user *entities.User) error {
+	// Хэшируем пароль
+	hashPassword, err := s.hashPassword(user.Password)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return user, nil
+	//Записываем хэшированный пароль
+	user.Password = hashPassword
+
+	// Создаем пользователя в БД
+	if err := s.userRepo.CreateUser(ctx, user); err != nil {
+		log.Printf("Ошибка создания пользователя: %v", err)
+		return errors.New("failed to create user")
+	}
+	return nil
 }
+
+func (s *authService) hashPassword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("Ошибка хеширования пароля: %v", err)
+		return "", errors.New("failed to hash password")
+	}
+	return string(hash), nil
+}
+
+//func (s *authService) GetUserBalance(ctx context.Context, userID int) (*entities.User, error) {
+//	user, err := s.userRepo.GetUserByID(ctx, userID)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return user, nil
+//}

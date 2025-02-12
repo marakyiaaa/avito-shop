@@ -29,23 +29,23 @@ func NewUserRepository(db *sql.DB) UserRepository {
 
 // CreateUser Регистрация пользователя
 func (r *userRepository) CreateUser(ctx context.Context, user *entities.User) error {
-	const query = `INSERT INTO users (username, password, coins)
+	const query = `INSERT INTO users (username, password, balance)
               VALUES ($1, $2, $3) RETURNING id`
-	err := r.db.QueryRowContext(ctx, query, user.Username, user.Password, user.Coins).Scan(&user.ID)
+	err := r.db.QueryRowContext(ctx, query, user.Username, user.Password, user.Balance).Scan(&user.ID)
 	return err
 }
 
 // GetUserByID Получить пользователя по ID
 func (r *userRepository) GetUserByID(ctx context.Context, id int) (*entities.User, error) {
 	user := &entities.User{}
-	query := `SELECT id, username, coins FROM users WHERE id = $1`
+	query := `SELECT id, username, balance FROM users WHERE id = $1`
 	row := r.db.QueryRowContext(ctx, query, id)
-	err := row.Scan(&user.ID, &user.Username, &user.Coins)
+	err := row.Scan(&user.ID, &user.Username, &user.Balance)
+
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil // если пользователя нет, возвращаем nil
-	}
-	if err != nil {
-		return nil, err //ошибки попозже
+	} else if err != nil {
+		return nil, err // если другая ошибка, возвращаем её
 	}
 	return user, nil
 }
@@ -53,22 +53,28 @@ func (r *userRepository) GetUserByID(ctx context.Context, id int) (*entities.Use
 // GetUserByUsername Получить пользователя по логину
 func (r *userRepository) GetUserByUsername(ctx context.Context, username string) (*entities.User, error) {
 	user := &entities.User{}
-	const query = `SELECT id, username, password, coins FROM users WHERE username = $1`
+	const query = `SELECT id, username, password, balance FROM users WHERE username = $1`
 	row := r.db.QueryRowContext(ctx, query, username)
-	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.Coins)
+	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.Balance)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil // если пользователя нет, возвращаем nil
 	}
 	if err != nil {
-		log.Println("Ошибка при запросе")
+		log.Printf("Ошибка при получении пользователя %s: %v", username, err)
 		return nil, err //ошибки попозже
 	}
+
+	// Проверяем, что данные реально заполнены
+	if user.ID == 0 {
+		return nil, nil
+	}
+
 	return user, nil
 }
 
 // UpdateUserBalance Обновить баланс пользователя
 func (r *userRepository) UpdateUserBalance(ctx context.Context, id int, newBalance int) error {
-	query := `UPDATE users SET coins = $1 WHERE id = $2`
+	query := `UPDATE users SET balance = $1 WHERE id = $2`
 	_, err := r.db.ExecContext(ctx, query, newBalance, id)
 	return err
 }
@@ -85,7 +91,7 @@ func (r *userRepository) UpdateUserBalance(ctx context.Context, id int, newBalan
 //	var users []entities.User
 //	for rows.Next() {
 //		var user entities.User
-//		if err := rows.Scan(&user.ID, &user.Username, &user.Coins); err != nil {
+//		if err := rows.Scan(&user.ID, &user.Username, &user.Balance); err != nil {
 //			return nil, err
 //		}
 //		users = append(users, user)
@@ -102,7 +108,7 @@ func (r *userRepository) UpdateUserBalance(ctx context.Context, id int, newBalan
 //func (r *userRepository) CreateUser(ctx context.Context, user *entities.User) error {
 //	query, args, err := squirrel.Insert("users").
 //		Columns("username", "password", "coins").
-//		Values(user.Username, user.Password, user.Coins).
+//		Values(user.Username, user.Password, user.Balance).
 //		Suffix("RETURNING id").
 //		PlaceholderFormat(squirrel.Dollar).
 //		ToSql()
