@@ -111,11 +111,3 @@ func (s *authService) hashPassword(password string) (string, error) {
 	}
 	return string(hash), nil
 }
-
-//func (s *authService) GetUserBalance(ctx context.Context, userID int) (*entities.User, error) {
-//	user, err := s.userRepo.GetUserByID(ctx, userID)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return user, nil
-//}

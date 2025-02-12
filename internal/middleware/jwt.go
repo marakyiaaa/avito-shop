@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"avito_shop/internal/models/api/response"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -16,7 +17,7 @@ func NewCheckAuth(secretKey string) gin.HandlerFunc {
 		// Получаем токен из заголовка Authorization
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing Authorization header"})
+			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "Missing Authorization header"})
 			c.Abort()
 			return
 		}
@@ -24,7 +25,7 @@ func NewCheckAuth(secretKey string) gin.HandlerFunc {
 		// Разбиваем заголовок: "Bearer <token>"
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization header format"})
+			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "Invalid Authorization header format"})
 			c.Abort()
 			return
 		}
@@ -41,7 +42,7 @@ func NewCheckAuth(secretKey string) gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "Invalid or expired token"})
 			c.Abort()
 			return
 		}
@@ -49,7 +50,7 @@ func NewCheckAuth(secretKey string) gin.HandlerFunc {
 		// Получаем user_id из токена
 		userID, ok := (*claims)["user_id"].(float64)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token payload"})
+			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "Invalid or expired token"})
 			c.Abort()
 			return
 		}
@@ -105,5 +106,57 @@ func NewCheckAuth(secretKey string) gin.HandlerFunc {
 //
 //			h(w, r.WithContext(ctx))
 //		}
+//	}
+//}
+
+////ERROR GIN
+//func NewCheckAuth(secretKey string) gin.HandlerFunc {
+//	return func(c *gin.Context) {
+//		// Получаем токен из заголовка Authorization
+//		authHeader := c.GetHeader("Authorization")
+//		if authHeader == "" {
+//			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing Authorization header"})
+//			c.Abort()
+//			return
+//		}
+//
+//		// Разбиваем заголовок: "Bearer <token>"
+//		tokenParts := strings.Split(authHeader, " ")
+//		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
+//			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization header format"})
+//			c.Abort()
+//			return
+//		}
+//
+//		tokenString := tokenParts[1]
+//
+//		// Разбираем и проверяем токен
+//		claims := &jwt.MapClaims{}
+//		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+//			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+//				return nil, fmt.Errorf("unexpected signing method")
+//			}
+//			return []byte(secretKey), nil
+//		})
+//
+//		if err != nil || !token.Valid {
+//			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+//			c.Abort()
+//			return
+//		}
+//
+//		// Получаем user_id из токена
+//		userID, ok := (*claims)["user_id"].(float64)
+//		if !ok {
+//			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token payload"})
+//			c.Abort()
+//			return
+//		}
+//
+//		// Добавляем user_id в контекст Gin
+//		c.Set("user_id", int(userID))
+//
+//		// Продолжаем выполнение запроса
+//		c.Next()
 //	}
 //}

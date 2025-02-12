@@ -1,8 +1,12 @@
 package handlers
 
 import (
+	"avito_shop/internal/models/api/request"
+	"avito_shop/internal/models/api/response"
 	"avito_shop/internal/service"
+	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"net/http"
 )
 
@@ -15,48 +19,34 @@ func NewAuthHandlers(authService service.AuthService) *AuthHandlers {
 }
 
 func (h *AuthHandlers) AuthHandler(c *gin.Context) {
-	var credentials struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
+	var authReq request.AuthRequest
+
+	if err := c.ShouldBindJSON(&authReq); err != nil {
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": formatValidationErrors(ve)})
+			return
+		}
 	}
 
-	if err := c.ShouldBindJSON(&credentials); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		return
-	}
-
-	user, token, err := h.authService.AuthenticateUser(c, credentials.Username, credentials.Password)
+	user, token, err := h.authService.AuthenticateUser(c, authReq.Username, authReq.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	response := map[string]interface{}{
-		"user_id": user.ID,
-		"token":   token,
-	}
+	resp := response.AuthResponse{Token: token}
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, gin.H{
+		"user_id": user.ID,
+		"token":   resp.Token,
+	})
 }
 
-//// GetUserBalanceHandler Получение баланса пользователя
-//func (h *AuthHandlers) GetUserBalanceHandler(c *gin.Context) {
-//	userID, ok := c.Get("user_id")
-//	if !ok {
-//		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
-//		return
-//	}
-//
-//	user, err := h.authService.GetUserBalance(c, userID.(int))
-//	if err != nil {
-//		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-//		return
-//	}
-//
-//	response := map[string]interface{}{
-//		"user_id": user.ID,
-//		"balance": user.Balance,
-//	}
-//
-//	c.JSON(http.StatusOK, response)
-//}
+func formatValidationErrors(ve validator.ValidationErrors) []string {
+	var errors []string
+	for _, fe := range ve {
+		errors = append(errors, fe.Error()) // Использует встроенное описание ошибки
+	}
+	return errors
+}

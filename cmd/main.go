@@ -19,7 +19,7 @@ func main() {
 	// Загружаем конфигурацию
 	cfg := config.Load()
 
-	// Подключение базы данных
+	// Подключение БД
 	db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName))
 	if err != nil {
@@ -27,30 +27,31 @@ func main() {
 	}
 	defer db.Close()
 
-	// Инициализация базы данных и применение миграций
+	// Инициализация БД и применение миграций
 	migrations.InitDB(db, cfg, "./migrations")
 
 	// Инициализация репозиториев
 	userRepo := repository.NewUserRepository(db)
-	//itemRepo := repository.NewItemRepository(db)
-	//transactionRepo := repository.NewTransactionRepository(db)
+	itemRepo := repository.NewItemRepository(db)
+	transactionRepo := repository.NewTransactionRepository(db)
 
-	// Инициализация сервиса аутентификации
+	// Инициализация сервисов
+	storeService := service.NewStoreService(userRepo, itemRepo, transactionRepo)
 	authService := service.NewAuthService(userRepo, cfg.JWTSecretKey)
-	//shopService := service.NewShopService(userRepo, itemRepo, transactionRepo)
 
 	// Инициализация обработчиков
 	authHandlers := handlers.NewAuthHandlers(authService)
-	//shopHandlers := handlers.NewShopHandlers(shopService)
+	storeHandlers := handlers.NewStoreHandler(storeService)
 
 	r := gin.Default()
 	r.Use(middleware.NewCORS())
 
 	// Регистрируем обработчики
 	r.POST("/api/auth", authHandlers.AuthHandler)
+	// защищённый маршрут
 	//r.GET("/api/info", middleware.NewCheckAuth(cfg.JWTSecretKey), shopHandlers.GetInfoHandler)
 	//r.POST("/api/sendCoin", middleware.NewCheckAuth(cfg.JWTSecretKey), shopHandlers.SendCoinHandler)
-	//r.GET("/api/buy/:item", middleware.NewCheckAuth(cfg.JWTSecretKey), shopHandlers.BuyItemHandler)
+	r.GET("/api/buy/:item", middleware.NewCheckAuth(cfg.JWTSecretKey), storeHandlers.BuyItemHandler)
 
 	// Определяем порт сервера
 	serverPort := os.Getenv("SERVER_PORT")
