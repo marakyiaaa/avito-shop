@@ -33,11 +33,11 @@ func main() {
 	// Инициализация репозиториев
 	userRepo := repository.NewUserRepository(db)
 	itemRepo := repository.NewItemRepository(db)
-	transactionRepo := repository.NewTransactionRepository(db)
+	//transactionRepo := repository.NewTransactionRepository(db)
 
 	// Инициализация сервисов
-	storeService := service.NewStoreService(userRepo, itemRepo, transactionRepo)
 	authService := service.NewAuthService(userRepo, cfg.JWTSecretKey)
+	storeService := service.NewStoreService(userRepo, itemRepo)
 
 	// Инициализация обработчиков
 	authHandlers := handlers.NewAuthHandlers(authService)

@@ -9,12 +9,10 @@ import (
 	"strings"
 )
 
-//хз новое
-
 // NewCheckAuth — Middleware для проверки JWT
 func NewCheckAuth(secretKey string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Получаем токен из заголовка Authorization
+		// Получаем токен из заголовка Authorization <token>
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "Missing Authorization header"})
@@ -48,7 +46,7 @@ func NewCheckAuth(secretKey string) gin.HandlerFunc {
 		}
 
 		// Получаем user_id из токена
-		userID, ok := (*claims)["user_id"].(float64)
+		userID, ok := (*claims)["user_id"].(int)
 		if !ok {
 			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "Invalid or expired token"})
 			c.Abort()
@@ -56,7 +54,7 @@ func NewCheckAuth(secretKey string) gin.HandlerFunc {
 		}
 
 		// Добавляем user_id в контекст Gin
-		c.Set("user_id", int(userID))
+		c.Set("user_id", userID)
 
 		// Продолжаем выполнение запроса
 		c.Next()
@@ -160,3 +158,9 @@ func NewCheckAuth(secretKey string) gin.HandlerFunc {
 //		c.Next()
 //	}
 //}
+
+curl -X GET "https://localhost:8080/api/buy/cup" \
+-H 'accept: application/json' \
+-H "Authorization: Bearer yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyfQ.mlEodQhYmFiXGgkkaEUd7HOCWRaT6FVRbQLqgeAK31k"
+
+yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyfQ.mlEodQhYmFiXGgkkaEUd7HOCWRaT6FVRbQLqgeAK31k
