@@ -6,6 +6,7 @@ import (
 	"avito_shop/internal/repository"
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 )
@@ -127,4 +128,47 @@ func (s *storeService) GetTransactionHistory(ctx context.Context, userID int) (*
 	}
 
 	return history, nil
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+// SendCoin обновление балансов пользователей
+func (s *storeService) SendCoin(ctx context.Context, userID, recipientID int, amount int) error {
+	// Получаем отправителя
+	user, err := s.userRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("user not found: %w", err)
+	}
+
+	// Проверяем, достаточно ли средств у отправителя
+	if user.Balance < amount {
+		return fmt.Errorf("not enough balance")
+	}
+
+	// Получаем получателя
+	recipient, err := s.userRepo.GetUserByID(ctx, recipientID)
+	if err != nil {
+		return fmt.Errorf("recipient not found: %w", err)
+	}
+
+	// Обновляем баланс отправителя и получателя
+	user.Balance -= amount
+	recipient.Balance += amount
+
+	// Сохраняем обновленные данные пользователей в базе
+	err = s.userRepo.UpdateUser(ctx, user)
+	if err != nil {
+		return fmt.Errorf("failed to update sender: %w", err)
+	}
+
+	err = s.userRepo.UpdateUser(ctx, recipient)
+	if err != nil {
+		return fmt.Errorf("failed to update recipient: %w", err)
+	}
+
+	// Логика для записи транзакции в таблицу транзакций
+	return s.transactionRepo.CreateTransaction(ctx, userID, recipientID, amount)
 }

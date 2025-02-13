@@ -34,6 +34,24 @@ func (r *transactionRepository) CreateTransaction(ctx context.Context, fromUserI
 	return transaction, nil
 }
 
+//func (r *transactionRepository) CreateTransaction(ctx context.Context, userID, recipientID int, amount int) error {
+//	// Логика записи транзакции в базу данных
+//	transaction := &entities.Transaction{
+//		UserID:      userID,
+//		RecipientID: recipientID,
+//		Amount:      amount,
+//		Timestamp:   time.Now(),
+//	}
+//
+//	// Пример создания записи в таблице транзакций
+//	_, err := r.db.ExecContext(ctx, "INSERT INTO transactions (user_id, recipient_id, amount, timestamp) VALUES (?, ?, ?, ?)",
+//		transaction.UserID, transaction.RecipientID, transaction.Amount, transaction.Timestamp)
+//	if err != nil {
+//		return fmt.Errorf("failed to create transaction: %w", err)
+//	}
+//	return nil
+//}
+
 //func (r *transactionRepository) GetSentTransactions(ctx context.Context, userID int) ([]entities.Transaction, error) {
 //	var transactions []entities.Transaction
 //	query := `SELECT id, from_user_id, to_user_id, amount, timestamp FROM transactions WHERE from_user_id = $1`
