@@ -12,6 +12,7 @@ import (
 type ItemRepository interface {
 	GetItemByName(ctx context.Context, name string) (*entities.Item, error)
 	AddToInventory(ctx context.Context, userID int, itemType string) error
+	GetInventoryByUserID(ctx context.Context, userID int) ([]*entities.Inventory, error)
 }
 
 type itemRepository struct {
@@ -36,6 +37,7 @@ func (r *itemRepository) GetItemByName(ctx context.Context, name string) (*entit
 	return item, nil
 }
 
+// мб создть отдельное репо с инвентарем
 func (r *itemRepository) AddToInventory(ctx context.Context, userID int, itemType string) error {
 	const checkQuery = `SELECT quantity FROM inventories WHERE user_id = $1 AND item_type = $2`
 	var quantity int
@@ -59,4 +61,24 @@ func (r *itemRepository) AddToInventory(ctx context.Context, userID int, itemTyp
 		}
 	}
 	return nil
+}
+
+// ///////////////info
+func (r *itemRepository) GetInventoryByUserID(ctx context.Context, userID int) ([]*entities.Inventory, error) {
+	const query = `SELECT id, user_id, item_type, quantity FROM inventories WHERE user_id = $1`
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при получении инвентаря: %w", err)
+	}
+	defer rows.Close()
+
+	var inventories []*entities.Inventory
+	for rows.Next() {
+		inventory := &entities.Inventory{}
+		if err := rows.Scan(&inventory.ID, &inventory.UserID, &inventory.ItemType, &inventory.Quantity); err != nil {
+			return nil, fmt.Errorf("ошибка при сканировании инвентаря: %w", err)
+		}
+		inventories = append(inventories, inventory)
+	}
+	return inventories, nil
 }

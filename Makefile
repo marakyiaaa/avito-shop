@@ -6,9 +6,6 @@ build:
 run:
 	@docker compose up -d
 
-reboot:
-	@docker compose down
-
 del:
 	@docker compose down -v  # Удаляет контейнеры и тома (вся БД удалится)
 
@@ -35,8 +32,6 @@ go:
 #
 #wrk:
 #	@wrk -t4 -c200 -d30s http://localhost:8080/api/orders
-
-
 
 
 

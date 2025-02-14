@@ -39,19 +39,20 @@ func main() {
 	authService := service.NewAuthService(userRepo, cfg.JWTSecretKey)
 	storeService := service.NewStoreService(userRepo, itemRepo)
 	transactionService := service.NewTransactionService(userRepo, transactionRepo)
+	infoService := service.NewInfoService(userRepo, itemRepo, transactionRepo)
 
 	// Инициализация обработчиков
 	authHandlers := handlers.NewAuthHandlers(authService)
 	storeHandlers := handlers.NewStoreHandler(storeService)
 	transactionHandlers := handlers.NewTransactionHandler(transactionService)
+	infoHandler := handlers.NewInfoHandler(infoService)
 
 	r := gin.Default()
 	r.Use(middleware.NewCORS())
 
 	// Регистрируем обработчики
 	r.POST("/api/auth", authHandlers.AuthHandler)
-	// защищённый маршрут
-	//r.GET("/api/info", middleware.NewCheckAuth(cfg.JWTSecretKey), shopHandlers.GetInfoHandler)
+	r.GET("/api/info", middleware.NewCheckAuth(cfg.JWTSecretKey), infoHandler.GetUserInfoHandler)
 	r.POST("/api/sendCoin", middleware.NewCheckAuth(cfg.JWTSecretKey), transactionHandlers.SendCoinHandler)
 	r.GET("/api/buy/:item", middleware.NewCheckAuth(cfg.JWTSecretKey), storeHandlers.BuyItemHandler) //пост или гет?
 
