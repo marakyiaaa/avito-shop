@@ -1,19 +1,19 @@
 package service
 
 import (
+	"avito_shop/internal/middleware"
 	"avito_shop/internal/models/entities"
 	"avito_shop/internal/repository"
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 )
 
 type AuthService interface {
 	AuthenticateUser(ctx context.Context, username, password string) (*entities.User, string, error)
-	GenerateJWT(user *entities.User) (string, error)
+
 	//GetUserBalance(ctx context.Context, userID int) (*entities.User, error)
 }
 
@@ -62,27 +62,11 @@ func (s *authService) AuthenticateUser(ctx context.Context, username, password s
 	}
 
 	// Генерируем JWT
-	token, err := s.GenerateJWT(user)
+	token, err := middleware.GenerateJWT(s.secretKey, user.ID)
 	if err != nil {
 		return nil, "", err
 	}
 	return user, token, nil
-}
-
-// GenerateJWT Генерация JWT токена
-func (s *authService) GenerateJWT(user *entities.User) (string, error) {
-	claims := jwt.MapClaims{
-		"user_id": user.ID,
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	tokenString, err := token.SignedString([]byte(s.secretKey))
-	if err != nil {
-		log.Printf("Ошибка генерации JWT: %v", err)
-		return "", errors.New("failed to generate token")
-	}
-	return tokenString, nil
 }
 
 // CreateUser Регистрация пользователя
@@ -103,6 +87,7 @@ func (s *authService) createUser(ctx context.Context, user *entities.User) error
 	return nil
 }
 
+// hashPassword хэширование пароля
 func (s *authService) hashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 
 type ItemRepository interface {
 	GetItemByName(ctx context.Context, name string) (*entities.Item, error)
-	AddToInventory(ctx context.Context, userID, itemID int) error
+	AddToInventory(ctx context.Context, userID int, itemType string) error
 }
 
 type itemRepository struct {
@@ -37,38 +37,25 @@ func (r *itemRepository) GetItemByName(ctx context.Context, name string) (*entit
 	return item, nil
 }
 
-//// AddToInventory запись о покупке в таблицу user_inventory
-//func (r *itemRepository) AddToInventory(ctx context.Context, userID, itemID int) error {
-//	const query = `INSERT INTO user_inventory (user_id, item_id) VALUES ($1, $2)`
-//	_, err := r.db.ExecContext(ctx, query, userID, itemID)
-//	if err != nil {
-//		return fmt.Errorf("ошибка при добавлении предмета в инвентарь: %w", err)
-//	}
-//	return nil
-//}
-
 // AddToInventory запись о покупке в таблицу user_inventory
-func (r *itemRepository) AddToInventory(ctx context.Context, userID, itemID int) error {
-	// Проверяем, есть ли уже товар в инвентаре
-	const checkQuery = `SELECT quantity FROM user_inventory WHERE user_id = $1 AND item_id = $2`
+func (r *itemRepository) AddToInventory(ctx context.Context, userID int, itemType string) error {
+	const checkQuery = `SELECT quantity FROM inventories WHERE user_id = $1 AND item_type = $2`
 	var quantity int
-	row := r.db.QueryRowContext(ctx, checkQuery, userID, itemID)
+	row := r.db.QueryRowContext(ctx, checkQuery, userID, itemType)
 	err := row.Scan(&quantity)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			// Товара нет, добавляем новый
-			const insertQuery = `INSERT INTO user_inventory (user_id, item_id, quantity) VALUES ($1, $2, $3)`
-			_, err := r.db.ExecContext(ctx, insertQuery, userID, itemID)
+			const insertQuery = `INSERT INTO inventories (user_id, item_type, quantity) VALUES ($1, $2, 1)`
+			_, err := r.db.ExecContext(ctx, insertQuery, userID, itemType)
 			if err != nil {
-				return fmt.Errorf("ошибка при добавлении предмета в инвентарь: %w", err)
+				return fmt.Errorf("ошибка при добавлении товара в инвентарь: %w", err)
 			}
 		} else {
-			return fmt.Errorf("ошибка при проверке товара в инвентаре: %w", err)
+			return fmt.Errorf("ошибка при проверке инвентаря: %w", err)
 		}
 	} else {
-		// Товар есть, увеличиваем количество
-		const updateQuery = `UPDATE user_inventory SET quantity = $1 WHERE user_id = $2 AND item_id = $3`
-		_, err := r.db.ExecContext(ctx, updateQuery, quantity+1, userID, itemID)
+		const updateQuery = `UPDATE inventories SET quantity = $1 WHERE user_id = $2 AND item_type = $3`
+		_, err := r.db.ExecContext(ctx, updateQuery, quantity+1, userID, itemType)
 		if err != nil {
 			return fmt.Errorf("ошибка при обновлении количества товара: %w", err)
 		}

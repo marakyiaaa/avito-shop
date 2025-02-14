@@ -48,7 +48,7 @@ func (r *userRepository) GetUserByID(ctx context.Context, id int) (*entities.Use
 	}
 
 	// Проверяем, что данные реально заполнены
-	if user.ID == 0 || user.Username == "" || user.Password == "" {
+	if user.ID == 0 || user.Username == "" {
 		return nil, nil
 	}
 	return user, nil

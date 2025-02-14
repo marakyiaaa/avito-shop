@@ -66,3 +66,7 @@ func main() {
 		log.Fatalf("Ошибка при запуске сервера: %v", err)
 	}
 }
+
+//curl -X GET "https://localhost:8080/api/buy/cup" \
+//-H 'accept: application/json' \
+//-H "Authorization: Bearer yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyfQ.mlEodQhYmFiXGgkkaEUd7HOCWRaT6FVRbQLqgeAK31k"
