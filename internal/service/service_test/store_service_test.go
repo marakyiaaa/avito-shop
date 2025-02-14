@@ -45,7 +45,7 @@ func TestStoreService_BuyItem_ItemNotFound(t *testing.T) {
 	mockItemRepo := new(MockItemRepository)
 	mockInventoryRepo := new(MockInventoryRepository)
 
-	mockItemRepo.On("GetItemByName", mock.Anything, "item1").Return(nil, fmt.Errorf("товар не найден"))
+	mockItemRepo.On("GetItemByName", mock.Anything, "item1").Return((*entities.Item)(nil), fmt.Errorf("товар не найден"))
 
 	storeService := service.NewStoreService(mockUserRepo, mockItemRepo, mockInventoryRepo)
 	err := storeService.BuyItem(context.Background(), 1, "item1")
@@ -55,28 +55,29 @@ func TestStoreService_BuyItem_ItemNotFound(t *testing.T) {
 	mockItemRepo.AssertExpectations(t)
 }
 
-//TestStoreService_BuyItem_UserNotFound Пользователь не найден
-//func TestStoreService_BuyItem_UserNotFound(t *testing.T) {
-//	mockUserRepo := new(MockUserRepository)
-//	mockItemRepo := new(MockItemRepository)
-//	mockInventoryRepo := new(MockInventoryRepository)
-//
-//	expectedItem := &entities.Item{
-//		ID:    1,
-//		Name:  "item1",
-//		Price: 100,
-//	}
-//	mockItemRepo.On("GetItemByName", mock.Anything, "item1").Return(expectedItem, nil)
-//	mockUserRepo.On("GetUserByID", mock.Anything, 1).Return(nil, fmt.Errorf("пользователь не найден"))
-//
-//	storeService := service.NewStoreService(mockUserRepo, mockItemRepo, mockInventoryRepo)
-//	err := storeService.BuyItem(context.Background(), 1, "item1")
-//
-//	assert.Error(t, err)
-//	assert.Equal(t, "пользователь не найден", err.Error())
-//	mockItemRepo.AssertExpectations(t)
-//	mockUserRepo.AssertExpectations(t)
-//}
+// TestStoreService_BuyItem_UserNotFound Пользователь не найден
+func TestStoreService_BuyItem_UserNotFound(t *testing.T) {
+	mockUserRepo := new(MockUserRepository)
+	mockItemRepo := new(MockItemRepository)
+	mockInventoryRepo := new(MockInventoryRepository)
+
+	expectedItem := &entities.Item{
+		ID:    1,
+		Name:  "item1",
+		Price: 100,
+	}
+
+	mockItemRepo.On("GetItemByName", mock.Anything, "item1").Return(expectedItem, nil)
+	mockUserRepo.On("GetUserByID", mock.Anything, 1).Return((*entities.User)(nil), fmt.Errorf("пользователь не найден"))
+
+	storeService := service.NewStoreService(mockUserRepo, mockItemRepo, mockInventoryRepo)
+	err := storeService.BuyItem(context.Background(), 1, "item1")
+
+	assert.Error(t, err)
+	assert.Equal(t, "пользователь не найден", err.Error())
+	mockItemRepo.AssertExpectations(t)
+	mockUserRepo.AssertExpectations(t)
+}
 
 // TestStoreService_BuyItem_InsufficientFunds Недостаточно средств
 func TestStoreService_BuyItem_InsufficientFunds(t *testing.T) {

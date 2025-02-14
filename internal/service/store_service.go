@@ -30,19 +30,15 @@ func NewStoreService(userRepo repository.UserRepository, itemRepo repository.Ite
 // Проверяет баланс пользователя и добавляет предмет в его инвентарь.
 func (s *storeService) BuyItem(ctx context.Context, userID int, itemName string) error {
 	item, err := s.itemRepo.GetItemByName(ctx, itemName)
-	if err != nil {
+	if err != nil || item == nil {
 		log.Println("Ошибка при получении товара")
 		return fmt.Errorf("товар не найден")
 	}
 	log.Println("Цена товара:", item.Price)
 
 	user, err := s.userRepo.GetUserByID(ctx, userID)
-	if err != nil {
+	if err != nil || user == nil {
 		log.Println("Ошибка при получении пользователя:", err)
-		return fmt.Errorf("пользователь не найден: %w", err)
-	}
-	if user == nil {
-		log.Println("Пользователь не найден")
 		return fmt.Errorf("пользователь не найден")
 	}
 
