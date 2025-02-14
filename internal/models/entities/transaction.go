@@ -2,6 +2,7 @@ package entities
 
 import "time"
 
+// Transaction представляет транзакцию между пользователями.
 type Transaction struct {
 	ID         int       `json:"id"`
 	FromUserID int       `json:"from_user_id"`

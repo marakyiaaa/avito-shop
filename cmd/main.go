@@ -25,21 +25,26 @@ func main() {
 	if err != nil {
 		log.Fatalf("Ошибка подключения к базе данных: %v", err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		if err := db.Close(); err != nil {
+			log.Printf("Ошибка при закрытии базы данных: %v", err)
+		}
+	}(db)
 
 	// Инициализация БД и применение миграций
-	migrations.InitDB(db, cfg, "./migrations")
+	migrations.InitDB(db, cfg, "../migrations")
 
 	// Инициализация репозиториев
 	userRepo := repository.NewUserRepository(db)
 	itemRepo := repository.NewItemRepository(db)
 	transactionRepo := repository.NewTransactionRepository(db)
+	inventoryRepo := repository.NewInventoryRepository(db)
 
 	// Инициализация сервисов
 	authService := service.NewAuthService(userRepo, cfg.JWTSecretKey)
-	storeService := service.NewStoreService(userRepo, itemRepo)
+	storeService := service.NewStoreService(userRepo, itemRepo, inventoryRepo)
 	transactionService := service.NewTransactionService(userRepo, transactionRepo)
-	infoService := service.NewInfoService(userRepo, itemRepo, transactionRepo)
+	infoService := service.NewInfoService(userRepo, itemRepo, inventoryRepo, transactionRepo)
 
 	// Инициализация обработчиков
 	authHandlers := handlers.NewAuthHandlers(authService)
@@ -54,7 +59,7 @@ func main() {
 	r.POST("/api/auth", authHandlers.AuthHandler)
 	r.GET("/api/info", middleware.NewCheckAuth(cfg.JWTSecretKey), infoHandler.GetUserInfoHandler)
 	r.POST("/api/sendCoin", middleware.NewCheckAuth(cfg.JWTSecretKey), transactionHandlers.SendCoinHandler)
-	r.GET("/api/buy/:item", middleware.NewCheckAuth(cfg.JWTSecretKey), storeHandlers.BuyItemHandler) //пост или гет?
+	r.POST("/api/buy/:item", middleware.NewCheckAuth(cfg.JWTSecretKey), storeHandlers.BuyItemHandler)
 
 	// Определяем порт сервера
 	serverPort := os.Getenv("SERVER_PORT")

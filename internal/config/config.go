@@ -1,9 +1,13 @@
 package config
 
 import (
+	"github.com/joho/godotenv"
+	"log"
 	"os"
 )
 
+// Config представляет конфигурацию приложения.
+// Содержит настройки для сервера, базы данных и JWT.
 type Config struct {
 	ServerPort   string
 	DBPort       string
@@ -14,7 +18,14 @@ type Config struct {
 	JWTSecretKey string
 }
 
+// Load загружает конфигурацию из переменных окружения.
+// Возвращает указатель на Config, заполненный значениями из окружения.
 func Load() *Config {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Файл .env не найден, используются переменные окружения из системы")
+	}
+
 	return &Config{
 		ServerPort:   os.Getenv("SERVER_PORT"),
 		DBPort:       os.Getenv("DATABASE_PORT"),

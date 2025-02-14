@@ -5,10 +5,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	_ "github.com/lib/pq"
 	"log"
 )
 
+// UserRepository определяет методы для работы с пользователями.
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *entities.User) error
 	GetUserByID(ctx context.Context, id int) (*entities.User, error)
@@ -16,14 +16,19 @@ type UserRepository interface {
 	UpdateUserBalance(ctx context.Context, id int, newBalance int) error
 }
 
+// userRepository реализует интерфейс UserRepository.
+// Использует базу данных для хранения и управления данными.
 type userRepository struct {
 	db *sql.DB
 }
 
+// NewUserRepository создает новый экземпляр userRepository.
+// Принимает подключение к базе данных (*sql.DB) и возвращает реализацию UserRepository.
 func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
+// CreateUser создает нового пользователя в базе данных.
 func (r *userRepository) CreateUser(ctx context.Context, user *entities.User) error {
 	const query = `INSERT INTO users (username, password, balance)
               VALUES ($1, $2, $3) RETURNING id`
@@ -31,6 +36,7 @@ func (r *userRepository) CreateUser(ctx context.Context, user *entities.User) er
 	return err
 }
 
+// GetUserByID возвращает пользователя по его ID.
 func (r *userRepository) GetUserByID(ctx context.Context, id int) (*entities.User, error) {
 	user := &entities.User{}
 	const query = `SELECT id, username, balance FROM users WHERE id = $1`
@@ -49,6 +55,7 @@ func (r *userRepository) GetUserByID(ctx context.Context, id int) (*entities.Use
 	return user, nil
 }
 
+// GetUserByUsername возвращает пользователя по его имени.
 func (r *userRepository) GetUserByUsername(ctx context.Context, username string) (*entities.User, error) {
 	user := &entities.User{}
 	const query = `SELECT id, username, password, balance FROM users WHERE username = $1`
@@ -69,6 +76,7 @@ func (r *userRepository) GetUserByUsername(ctx context.Context, username string)
 	return user, nil
 }
 
+// UpdateUserBalance обновляет баланс пользователя.
 func (r *userRepository) UpdateUserBalance(ctx context.Context, id int, newBalance int) error {
 	query := `UPDATE users SET balance = $1 WHERE id = $2`
 	_, err := r.db.ExecContext(ctx, query, newBalance, id)

@@ -3,25 +3,31 @@ package service
 import (
 	"avito_shop/internal/repository"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 )
 
+// StoreService определяет методы для работы с магазином.
 type StoreService interface {
 	BuyItem(ctx context.Context, userID int, itemName string) error
 }
 
+// storeService реализует интерфейс StoreService.
+// Использует репозитории пользователей и предметов и инвентаря для выполнения операций.
 type storeService struct {
-	userRepo repository.UserRepository
-	itemRepo repository.ItemRepository
+	userRepo      repository.UserRepository
+	itemRepo      repository.ItemRepository
+	inventoryRepo repository.InventoryRepository
 }
 
-func NewStoreService(userRepo repository.UserRepository, itemRepo repository.ItemRepository) StoreService {
-	return &storeService{userRepo: userRepo, itemRepo: itemRepo}
+// NewStoreService создает новый экземпляр storeService.
+// Принимает репозитории пользователей и предметов и инвентаря.
+func NewStoreService(userRepo repository.UserRepository, itemRepo repository.ItemRepository, inventoryRepo repository.InventoryRepository) StoreService {
+	return &storeService{userRepo: userRepo, itemRepo: itemRepo, inventoryRepo: inventoryRepo}
 }
 
-// BuyItem осуществляет покупку предмета
+// BuyItem осуществляет покупку предмета пользователем.
+// Проверяет баланс пользователя и добавляет предмет в его инвентарь.
 func (s *storeService) BuyItem(ctx context.Context, userID int, itemName string) error {
 	item, err := s.itemRepo.GetItemByName(ctx, itemName)
 	if err != nil {
@@ -37,12 +43,12 @@ func (s *storeService) BuyItem(ctx context.Context, userID int, itemName string)
 	}
 	if user == nil {
 		log.Println("Пользователь не найден")
-		return errors.New("пользователь не найден")
+		return fmt.Errorf("пользователь не найден")
 	}
 
 	if user.Balance < item.Price {
 		log.Println("Недостаточно средств")
-		return errors.New("недостаточно средств")
+		return fmt.Errorf("недостаточно средств")
 	}
 
 	newBalance := user.Balance - item.Price
@@ -52,7 +58,7 @@ func (s *storeService) BuyItem(ctx context.Context, userID int, itemName string)
 		return fmt.Errorf("не удалось обновить баланс: %w", err)
 	}
 
-	if err := s.itemRepo.AddToInventory(ctx, userID, itemName); err != nil {
+	if err := s.inventoryRepo.AddToInventory(ctx, userID, itemName); err != nil {
 		return fmt.Errorf("не удалось добавить предмет в инвентарь: %w", err)
 	}
 

@@ -8,16 +8,8 @@ import (
 	"log"
 )
 
+// InitDB инициализирует соединение с базой данных и применяет миграции.
 func InitDB(db *sql.DB, cfg *config.Config, migrationsPath string) {
-	//// Подключение к базе данных
-	//db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-	//	cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName))
-	//if err != nil {
-	//	log.Fatalf("Ошибка подключения к базе данных: %v", err)
-	//}
-	//defer db.Close()
-
-	// Логирование информации о базе данных из конфигурации
 	log.Printf("Используется база данных: %s://%s:%s@%s:%s/%s",
 		"postgres", cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
 

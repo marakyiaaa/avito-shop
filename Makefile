@@ -19,10 +19,11 @@ inf:
 #	@docker exec kafka kafka-topics --bootstrap-server kafka:9092 --create --topic orders
 
 go:
-	@go run cmd/app/main.go
+	@go run cmd/main.go
 
-#test:
-#	@go test -v internal/service/service_test.go internal/service/service.go
+test:
+	@go test -v internal/service/service_test/auth_service_test.go \
+	internal/service/service_test/store_service_test.go
 #
 #cover:
 #	@go test -cover internal/service/service_test.go internal/service/service.go
@@ -36,7 +37,9 @@ go:
 
 
 check:
-	@golangci-lint run
+	@go vet ./...
+	@golint ./...
+	@errcheck ./...
 
 
 #goose create create_orders_table sql

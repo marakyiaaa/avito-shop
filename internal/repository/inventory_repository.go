@@ -6,39 +6,26 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/lib/pq"
 )
 
-type ItemRepository interface {
-	GetItemByName(ctx context.Context, name string) (*entities.Item, error)
+// InventoryRepository определяет методы для работы с инвентарем пользователя.
+type InventoryRepository interface {
 	AddToInventory(ctx context.Context, userID int, itemType string) error
 	GetInventoryByUserID(ctx context.Context, userID int) ([]*entities.Inventory, error)
 }
 
-type itemRepository struct {
+// inventoryRepository реализует интерфейс InventoryRepository.
+type inventoryRepository struct {
 	db *sql.DB
 }
 
-func NewItemRepository(db *sql.DB) ItemRepository {
-	return &itemRepository{db: db}
+// NewInventoryRepository создает новый экземпляр inventoryRepository.
+func NewInventoryRepository(db *sql.DB) InventoryRepository {
+	return &inventoryRepository{db: db}
 }
 
-func (r *itemRepository) GetItemByName(ctx context.Context, name string) (*entities.Item, error) {
-	item := &entities.Item{}
-	const query = `SELECT id, name, price FROM items WHERE name = $1`
-	row := r.db.QueryRowContext(ctx, query, name)
-	err := row.Scan(&item.ID, &item.Name, &item.Price)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("item not found")
-		}
-		return nil, err
-	}
-	return item, nil
-}
-
-// мб создть отдельное репо с инвентарем
-func (r *itemRepository) AddToInventory(ctx context.Context, userID int, itemType string) error {
+// AddToInventory добавляет элемент в инвентарь пользователя.
+func (r *inventoryRepository) AddToInventory(ctx context.Context, userID int, itemType string) error {
 	const checkQuery = `SELECT quantity FROM inventories WHERE user_id = $1 AND item_type = $2`
 	var quantity int
 	row := r.db.QueryRowContext(ctx, checkQuery, userID, itemType)
@@ -63,14 +50,19 @@ func (r *itemRepository) AddToInventory(ctx context.Context, userID int, itemTyp
 	return nil
 }
 
-// ///////////////info
-func (r *itemRepository) GetInventoryByUserID(ctx context.Context, userID int) ([]*entities.Inventory, error) {
+// GetInventoryByUserID возвращает инвентарь пользователя по его ID.
+func (r *inventoryRepository) GetInventoryByUserID(ctx context.Context, userID int) ([]*entities.Inventory, error) {
 	const query = `SELECT id, user_id, item_type, quantity FROM inventories WHERE user_id = $1`
 	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при получении инвентаря: %w", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			// Логирование ошибки закрытия rows (опционально)
+		}
+	}(rows)
 
 	var inventories []*entities.Inventory
 	for rows.Next() {

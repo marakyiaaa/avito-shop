@@ -7,10 +7,12 @@ import (
 	"net/http"
 )
 
+// StoreHandler - покупка товаров в магазине.
 type StoreHandler struct {
 	service service.StoreService
 }
 
+// NewStoreHandler конструктор (создает новый экземпляр) StoreHandler.
 func NewStoreHandler(service service.StoreService) *StoreHandler {
 	return &StoreHandler{service: service}
 }
