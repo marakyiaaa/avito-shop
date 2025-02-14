@@ -10,13 +10,11 @@ services:
     env_file:
       - .env.local
     environment:
-      # переменные окружения для подключения к БД
       - DATABASE_PORT=5432
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=password
       - DATABASE_NAME=shop
       - DATABASE_HOST=db
-      # порт сервиса
       - SERVER_PORT=8080
     depends_on:
       db:
@@ -32,7 +30,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: shop
     volumes:
-      - ./migrations:/docker-entrypoint-initdb.d  # Монтирование всей директории миграций
+      - ./migrations:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     healthcheck:
@@ -46,13 +44,3 @@ services:
 
 networks:
   internal:
-
-
-# FROM golang:1.22.3 AS builder
-# WORKDIR /avito-shop
-# COPY . .
-# RUN go mod tidy
-# RUN go build -o ./bin/main cmd/main.go
-# RUN chmod +x ./bin/main
-# EXPOSE 8080
-# CMD ["./bin/main"]

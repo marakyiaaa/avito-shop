@@ -23,15 +23,13 @@ func NewStoreService(userRepo repository.UserRepository, itemRepo repository.Ite
 
 // BuyItem осуществляет покупку предмета
 func (s *storeService) BuyItem(ctx context.Context, userID int, itemName string) error {
-	// Поиск предмета по имени
 	item, err := s.itemRepo.GetItemByName(ctx, itemName)
 	if err != nil {
-		log.Println("Ошибка при получении товара:", err)
+		log.Println("Ошибка при получении товара")
 		return fmt.Errorf("товар не найден")
 	}
 	log.Println("Цена товара:", item.Price)
 
-	// Поиск пользователя
 	user, err := s.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		log.Println("Ошибка при получении пользователя:", err)
@@ -42,13 +40,11 @@ func (s *storeService) BuyItem(ctx context.Context, userID int, itemName string)
 		return errors.New("пользователь не найден")
 	}
 
-	// Проверяем баланс
 	if user.Balance < item.Price {
 		log.Println("Недостаточно средств")
 		return errors.New("недостаточно средств")
 	}
 
-	// Списываем средства
 	newBalance := user.Balance - item.Price
 	err = s.userRepo.UpdateUserBalance(ctx, userID, newBalance)
 	if err != nil {
@@ -56,7 +52,6 @@ func (s *storeService) BuyItem(ctx context.Context, userID int, itemName string)
 		return fmt.Errorf("не удалось обновить баланс: %w", err)
 	}
 
-	// Добавляем предмет в инвентарь пользователя
 	if err := s.itemRepo.AddToInventory(ctx, userID, itemName); err != nil {
 		return fmt.Errorf("не удалось добавить предмет в инвентарь: %w", err)
 	}

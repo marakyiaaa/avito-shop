@@ -13,8 +13,6 @@ import (
 
 type AuthService interface {
 	AuthenticateUser(ctx context.Context, username, password string) (*entities.User, string, error)
-
-	//GetUserBalance(ctx context.Context, userID int) (*entities.User, error)
 }
 
 type authService struct {
@@ -48,7 +46,7 @@ func (s *authService) AuthenticateUser(ctx context.Context, username, password s
 			return nil, "", err
 		}
 
-		// После создания пользователя, снова получаем его из базы данных
+		// После создания пользователя, снова получаем его из БД
 		user, err = s.userRepo.GetUserByUsername(ctx, username)
 		if err != nil {
 			log.Printf("Ошибка при получении пользователя после регистрации: %v", err)

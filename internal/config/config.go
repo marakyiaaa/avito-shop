@@ -15,10 +15,6 @@ type Config struct {
 }
 
 func Load() *Config {
-	//err := godotenv.Load(".env.local") // Укажите правильный путь к .env
-	//if err != nil {
-	//	log.Println("Ошибка загрузки .env файла, будут использованы переменные окружения")
-	//}
 	return &Config{
 		ServerPort:   os.Getenv("SERVER_PORT"),
 		DBPort:       os.Getenv("DATABASE_PORT"),
@@ -29,14 +25,3 @@ func Load() *Config {
 		JWTSecretKey: os.Getenv("JWT_SECRET_KEY"),
 	}
 }
-
-//пока на всякий
-//func NewConfig(serverPort string, DBPort string, DBUser string, DBName string, DBPassword string, DBHost string) *Config {
-//	return &Config{
-//	ServerPort:serverPort,
-//	DBPort: DBPort,
-//	DBUser: DBUser,
-//	DBName: DBName,
-//	DBPassword: DBPassword,
-//	DBHost: DBHost}
-//}

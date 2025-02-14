@@ -22,7 +22,6 @@ func NewItemRepository(db *sql.DB) ItemRepository {
 	return &itemRepository{db: db}
 }
 
-// GetItemByName находит предмет по названию
 func (r *itemRepository) GetItemByName(ctx context.Context, name string) (*entities.Item, error) {
 	item := &entities.Item{}
 	const query = `SELECT id, name, price FROM items WHERE name = $1`
@@ -37,7 +36,6 @@ func (r *itemRepository) GetItemByName(ctx context.Context, name string) (*entit
 	return item, nil
 }
 
-// AddToInventory запись о покупке в таблицу user_inventory
 func (r *itemRepository) AddToInventory(ctx context.Context, userID int, itemType string) error {
 	const checkQuery = `SELECT quantity FROM inventories WHERE user_id = $1 AND item_type = $2`
 	var quantity int

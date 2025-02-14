@@ -33,15 +33,17 @@ func main() {
 	// Инициализация репозиториев
 	userRepo := repository.NewUserRepository(db)
 	itemRepo := repository.NewItemRepository(db)
-	//transactionRepo := repository.NewTransactionRepository(db)
+	transactionRepo := repository.NewTransactionRepository(db)
 
 	// Инициализация сервисов
 	authService := service.NewAuthService(userRepo, cfg.JWTSecretKey)
 	storeService := service.NewStoreService(userRepo, itemRepo)
+	transactionService := service.NewTransactionService(userRepo, transactionRepo)
 
 	// Инициализация обработчиков
 	authHandlers := handlers.NewAuthHandlers(authService)
 	storeHandlers := handlers.NewStoreHandler(storeService)
+	transactionHandlers := handlers.NewTransactionHandler(transactionService)
 
 	r := gin.Default()
 	r.Use(middleware.NewCORS())
@@ -50,8 +52,8 @@ func main() {
 	r.POST("/api/auth", authHandlers.AuthHandler)
 	// защищённый маршрут
 	//r.GET("/api/info", middleware.NewCheckAuth(cfg.JWTSecretKey), shopHandlers.GetInfoHandler)
-	//r.POST("/api/sendCoin", middleware.NewCheckAuth(cfg.JWTSecretKey), shopHandlers.SendCoinHandler)
-	r.GET("/api/buy/:item", middleware.NewCheckAuth(cfg.JWTSecretKey), storeHandlers.BuyItemHandler)
+	r.POST("/api/sendCoin", middleware.NewCheckAuth(cfg.JWTSecretKey), transactionHandlers.SendCoinHandler)
+	r.GET("/api/buy/:item", middleware.NewCheckAuth(cfg.JWTSecretKey), storeHandlers.BuyItemHandler) //пост или гет?
 
 	// Определяем порт сервера
 	serverPort := os.Getenv("SERVER_PORT")
@@ -59,14 +61,9 @@ func main() {
 		serverPort = "8080"
 	}
 
-	// Запуск сервера
 	log.Printf("Сервер запущен на порту %s...", serverPort)
 	err = r.Run(":" + serverPort)
 	if err != nil {
 		log.Fatalf("Ошибка при запуске сервера: %v", err)
 	}
 }
-
-//curl -X GET "https://localhost:8080/api/buy/cup" \
-//-H 'accept: application/json' \
-//-H "Authorization: Bearer yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyfQ.mlEodQhYmFiXGgkkaEUd7HOCWRaT6FVRbQLqgeAK31k"

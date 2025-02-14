@@ -46,7 +46,7 @@ func (h *AuthHandlers) AuthHandler(c *gin.Context) {
 func formatValidationErrors(ve validator.ValidationErrors) []string {
 	var errors []string
 	for _, fe := range ve {
-		errors = append(errors, fe.Error()) // Использует встроенное описание ошибки
+		errors = append(errors, fe.Error())
 	}
 	return errors
 }
