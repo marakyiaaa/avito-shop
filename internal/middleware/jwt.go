@@ -12,6 +12,10 @@ import (
 
 // GenerateJWT генерирует JWT для заданного идентификатора пользователя.
 func GenerateJWT(secretKey string, userID int) (string, error) {
+	if secretKey == "" {
+		return "", fmt.Errorf("secret key is empty")
+	}
+
 	claims := jwt.MapClaims{
 		"user_id": userID,
 	}

@@ -7,7 +7,7 @@ run:
 	@docker compose up -d
 
 del:
-	@docker compose down -v  # Удаляет контейнеры и тома (вся БД удалится)
+	@docker compose down -v
 
 inf:
 	docker ps -a
@@ -22,24 +22,28 @@ go:
 	@go run cmd/main.go
 
 test:
-	@go test -v internal/service/service_test/auth_service_test.go \
-	internal/service/service_test/store_service_test.go
-#
-#cover:
-#	@go test -cover internal/service/service_test.go internal/service/service.go
-#
-#brew_wrk:
-#	@brew install wrk
-#
-#wrk:
-#	@wrk -t4 -c200 -d30s http://localhost:8080/api/orders
+	@go test -coverprofile=coverage.out ./...
 
-
+cover:
+	@go tool cover -func=coverage.out
 
 check:
 	@go vet ./...
 	@golint ./...
 	@errcheck ./...
+
+
+
+
+#brew_wrk:
+#	@brew install wrk
+
+#wrk:
+#	@wrk -t4 -c200 -d30s http://localhost:8080/api/orders
+
+
+
+
 
 
 #goose create create_orders_table sql

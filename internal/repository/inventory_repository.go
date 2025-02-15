@@ -60,7 +60,7 @@ func (r *inventoryRepository) GetInventoryByUserID(ctx context.Context, userID i
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
-			// Логирование ошибки закрытия rows (опционально)
+
 		}
 	}(rows)
 

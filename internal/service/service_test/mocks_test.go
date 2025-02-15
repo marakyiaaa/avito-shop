@@ -51,6 +51,21 @@ func (m *MockItemRepository) GetInventoryByUserID(ctx context.Context, userID in
 	return args.Get(0).([]*entities.Inventory), args.Error(1)
 }
 
+// MockTransactionRepository — мок для TransactionRepository.
+type MockTransactionRepository struct {
+	mock.Mock
+}
+
+func (m *MockTransactionRepository) GetUserTransactions(ctx context.Context, userID int) ([]*entities.Transaction, error) {
+	args := m.Called(ctx, userID)
+	return args.Get(0).([]*entities.Transaction), args.Error(1)
+}
+
+func (m *MockTransactionRepository) CreateTransaction(ctx context.Context, fromUserID int, toUserID int, amount int) (*entities.Transaction, error) {
+	args := m.Called(ctx, fromUserID, toUserID, amount)
+	return args.Get(0).(*entities.Transaction), args.Error(1)
+}
+
 // MockInventoryRepository — мок для InventoryRepository.
 type MockInventoryRepository struct {
 	mock.Mock

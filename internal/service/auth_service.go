@@ -68,7 +68,8 @@ func (s *authService) AuthenticateUser(ctx context.Context, username, password s
 	// Генерируем JWT
 	token, err := middleware.GenerateJWT(s.secretKey, user.ID)
 	if err != nil {
-		return nil, "", err
+		log.Printf("Ошибка генерации токена: %v", err)
+		return nil, "", fmt.Errorf("ошибка аутентификации: failed to generate token")
 	}
 	return user, token, nil
 }
