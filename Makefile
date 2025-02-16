@@ -24,13 +24,4 @@ cover:
 	@go tool cover -func=coverage.out
 
 check:
-	@go vet ./...
-	@golint ./...
-	@errcheck ./...
-
-#golangci-lint run
-
-
-
-
-# psql -U postgres -d shop
+	@golangci-lint run
