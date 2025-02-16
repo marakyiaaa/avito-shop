@@ -94,7 +94,7 @@
       }
     },
     "/api/buy/{item}": {
-      "get": {
+      "post": {
         "summary": "Купить предмет за монеты.",
         "security": [
           {

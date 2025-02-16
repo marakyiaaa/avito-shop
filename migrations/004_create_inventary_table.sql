@@ -5,6 +5,3 @@ CREATE TABLE IF NOT EXISTS inventories (
     item_type VARCHAR(255) NOT NULL,
     quantity INT NOT NULL CHECK (quantity >= 0)
 );
-
--- -- +goose Down
--- DROP TABLE IF EXISTS user_inventory;

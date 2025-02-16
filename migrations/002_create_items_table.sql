@@ -17,6 +17,3 @@ INSERT INTO items (name, price) VALUES
     ('wallet', 50),
     ('pink-hoody', 500)
 ON CONFLICT (name) DO NOTHING;
-
--- +goose Down
--- DROP TABLE IF EXISTS items;

@@ -1,19 +1,20 @@
 package middleware
 
 import (
-	"avito_shop/internal/models/api/response"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 	"log"
 	"net/http"
 	"strings"
+
+	"avito_shop/internal/models/api/response"
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // GenerateJWT генерирует JWT для заданного идентификатора пользователя.
 func GenerateJWT(secretKey string, userID int) (string, error) {
 	if secretKey == "" {
-		return "", fmt.Errorf("secret key is empty")
+		return "", fmt.Errorf("пустой ключ")
 	}
 
 	claims := jwt.MapClaims{
@@ -25,7 +26,7 @@ func GenerateJWT(secretKey string, userID int) (string, error) {
 	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
 		log.Printf("Ошибка генерации JWT: %v", err)
-		return "", fmt.Errorf("failed to generate token")
+		return "", fmt.Errorf("ошибка генерации JWT")
 	}
 	return tokenString, nil
 }
@@ -36,14 +37,14 @@ func NewCheckAuth(secretKey string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "Missing Authorization header"})
+			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "отсутствует заголовок "})
 			c.Abort()
 			return
 		}
 
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "Invalid Authorization header format"})
+			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "неверный формат заголовка "})
 			c.Abort()
 			return
 		}
@@ -53,20 +54,20 @@ func NewCheckAuth(secretKey string) gin.HandlerFunc {
 		claims := &jwt.MapClaims{}
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method")
+				return nil, fmt.Errorf("недействительный токен")
 			}
 			return []byte(secretKey), nil
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "Invalid or expired token"})
+			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "недействительный токен"})
 			c.Abort()
 			return
 		}
 
 		userID, ok := (*claims)["user_id"].(float64)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "Invalid or expired token - 2"})
+			c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "недействительный токен"})
 			c.Abort()
 			return
 		}

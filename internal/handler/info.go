@@ -1,10 +1,11 @@
-package handlers
+package handler
 
 import (
+	"net/http"
+
 	"avito_shop/internal/models/api/response"
 	"avito_shop/internal/service"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 // InfoHandler - получение информации пользователя:
@@ -23,7 +24,7 @@ func NewInfoHandler(service service.InfoService) *InfoHandler {
 func (h *InfoHandler) GetUserInfoHandler(c *gin.Context) {
 	userID := c.GetInt("user_id")
 	if userID == 0 {
-		c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "user not authenticated"})
+		c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "пользователь не аутентифицирован"})
 		return
 	}
 

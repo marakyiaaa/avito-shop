@@ -1,17 +1,20 @@
 package service_test
 
 import (
-	"avito_shop/internal/models/entities"
-	"avito_shop/internal/service"
 	"context"
 	"fmt"
+	"testing"
+
+	"avito_shop/internal/models/entities"
+	"avito_shop/internal/service"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 // TestInfoService_GetUserInfo_Success Успешное получение информации о пользователе
 func TestInfoService_GetUserInfo_Success(t *testing.T) {
+
 	mockUserRepo := new(MockUserRepository)
 	mockItemRepo := new(MockItemRepository)
 	mockInventoryRepo := new(MockInventoryRepository)
@@ -81,31 +84,26 @@ func TestInfoService_GetUserInfo_InventoryError(t *testing.T) {
 }
 
 // TestInfoService_GetUserInfo_TransactionsError Ошибка при получении транзакций
-//func TestInfoService_GetUserInfo_TransactionsError(t *testing.T) {
-//	mockUserRepo := new(MockUserRepository)
-//	mockItemRepo := new(MockItemRepository)
-//	mockInventoryRepo := new(MockInventoryRepository)
-//	mockTransactionRepo := new(MockTransactionRepository)
-//
-//	// Ожидаемые данные
-//	expectedUser := &entities.User{ID: 1, Username: "user1", Balance: 1000}
-//	expectedInventory := []*entities.Inventory{{ID: 1, UserID: 1, ItemType: "type1", Quantity: 1}}
-//
-//	// Настройка моков
-//	mockUserRepo.On("GetUserByID", mock.Anything, 1).Return(expectedUser, nil)
-//	mockInventoryRepo.On("GetInventoryByUserID", mock.Anything, 1).Return(expectedInventory, nil)
-//	mockTransactionRepo.On("GetUserTransactions", mock.Anything, 1).Return([]*entities.Transaction{}, fmt.Errorf("ошибка транзакций"))
-//
-//	// Создаем сервис
-//	infoService := service.NewInfoService(mockUserRepo, mockItemRepo, mockInventoryRepo, mockTransactionRepo)
-//
-//	// Вызываем метод
-//	response, err := infoService.GetUserInfo(context.Background(), 1)
-//
-//	// Проверяем результат
-//	assert.Error(t, err)
-//	assert.Nil(t, response)
-//	mockUserRepo.AssertExpectations(t)
-//	mockInventoryRepo.AssertExpectations(t)
-//	mockTransactionRepo.AssertExpectations(t)
-//}
+func TestInfoService_GetUserInfo_TransactionsError(t *testing.T) {
+	mockUserRepo := new(MockUserRepository)
+	mockItemRepo := new(MockItemRepository)
+	mockInventoryRepo := new(MockInventoryRepository)
+	mockTransactionRepo := new(MockTransactionRepository)
+
+	expectedUser := &entities.User{ID: 1, Username: "user1", Balance: 1000}
+	expectedInventory := []*entities.Inventory{{ID: 1, UserID: 1, ItemType: "type1", Quantity: 1}}
+
+	mockUserRepo.On("GetUserByID", mock.Anything, 1).Return(expectedUser, nil)
+	mockInventoryRepo.On("GetInventoryByUserID", mock.Anything, 1).Return(expectedInventory, nil)
+	mockTransactionRepo.On("GetUserTransactions", mock.Anything, 1).Return([]*entities.Transaction{}, fmt.Errorf("ошибка транзакций"))
+
+	infoService := service.NewInfoService(mockUserRepo, mockItemRepo, mockInventoryRepo, mockTransactionRepo)
+
+	response, err := infoService.GetUserInfo(context.Background(), 1)
+
+	assert.Error(t, err)
+	assert.Nil(t, response)
+	mockUserRepo.AssertExpectations(t)
+	mockInventoryRepo.AssertExpectations(t)
+	mockTransactionRepo.AssertExpectations(t)
+}

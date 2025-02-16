@@ -1,14 +1,16 @@
-package handlers
+package handler
 
 import (
+	"errors"
+	"net/http"
+	"strings"
+
 	"avito_shop/internal/models/api/request"
 	"avito_shop/internal/models/api/response"
 	"avito_shop/internal/service"
-	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"net/http"
-	"strings"
 )
 
 // AuthHandlers аутентификация пользователей.

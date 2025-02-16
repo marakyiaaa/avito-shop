@@ -1,0 +1,45 @@
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+    - typecheck
+    - gocritic
+    - goconst
+    - unconvert
+    - copyloopvar
+    - gofmt
+    - misspell
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  staticcheck:
+    checks: ["all"]
+
+  gocritic:
+    enabled-checks:
+      - rangeExprCopy
+
+  misspell:
+    locale: "US"
+
+run:
+  timeout: 3m
+  issues-exit-code: 1
+  tests: true
+
+issues:
+  exclude-dirs:
+    - "vendor"
+    - "mocks"
+
+output:
+  formats:
+    - { format: colored-line-number }
+  print-issued-lines: true
+  print-linter-name: true

@@ -1,10 +1,12 @@
-package handlers
+package handler
 
 import (
+	"net/http"
+
 	"avito_shop/internal/models/api/response"
 	"avito_shop/internal/service"
+
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 // StoreHandler - покупка товаров в магазине.
@@ -22,21 +24,25 @@ func (h *StoreHandler) BuyItemHandler(c *gin.Context) {
 	// Получаем userID из контекста
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "Unauthorized"})
+		c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "неавторизованный"})
 		return
 	}
 
-	// Получаем название товара
+	id, ok := userID.(int)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Errors: "Ошибка сервера: неверный формат user_id"})
+		return
+	}
+
 	itemName := c.Param("item")
 	if itemName == "" {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Errors: "Не указано название товара"})
 		return
 	}
 
-	// Совершаем покупку через сервис
-	err := h.service.BuyItem(c, userID.(int), itemName)
+	err := h.service.BuyItem(c, id, itemName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Errors: "Transaction failed"})
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Errors: "Сбой транзакции"})
 		return
 	}
 }

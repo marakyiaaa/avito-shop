@@ -1,8 +1,6 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
-	"log"
 	"os"
 )
 
@@ -21,11 +19,6 @@ type Config struct {
 // Load загружает конфигурацию из переменных окружения.
 // Возвращает указатель на Config, заполненный значениями из окружения.
 func Load() *Config {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Файл .env не найден, используются переменные окружения из системы")
-	}
-
 	return &Config{
 		ServerPort:   os.Getenv("SERVER_PORT"),
 		DBPort:       os.Getenv("DATABASE_PORT"),

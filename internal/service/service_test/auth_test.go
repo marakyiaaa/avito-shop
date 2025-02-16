@@ -1,15 +1,17 @@
 package service_test
 
 import (
-	"avito_shop/internal/models/entities"
-	"avito_shop/internal/service"
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"testing"
+
+	"avito_shop/internal/models/entities"
+	"avito_shop/internal/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/crypto/bcrypt"
-	"testing"
 )
 
 // TestAuthService_AuthenticateUser_Success Успешная аутентификация
@@ -140,6 +142,24 @@ func TestAuthService_AuthenticateUser_CreateUserError(t *testing.T) {
 
 	authService := service.NewAuthService(mockUserRepo, "secretkey")
 	user, token, err := authService.AuthenticateUser(context.Background(), "newuser", "password")
+
+	assert.Error(t, err)
+	assert.Nil(t, user)
+	assert.Empty(t, token)
+	mockUserRepo.AssertExpectations(t)
+}
+
+// TestAuthService_AuthenticateUser_GetUserAfterRegistrationError Ошибка при получении пользователя после регистрации
+func TestAuthService_AuthenticateUser_GetUserAfterRegistrationError(t *testing.T) {
+	mockUserRepo := new(MockUserRepository)
+
+	// Настройка моков
+	mockUserRepo.On("GetUserByUsername", mock.Anything, "user1").Return((*entities.User)(nil), sql.ErrNoRows).Once()
+	mockUserRepo.On("CreateUser", mock.Anything, mock.AnythingOfType("*entities.User")).Return(nil)
+	mockUserRepo.On("GetUserByUsername", mock.Anything, "user1").Return((*entities.User)(nil), fmt.Errorf("ошибка при получении пользователя"))
+
+	authService := service.NewAuthService(mockUserRepo, "secretkey")
+	user, token, err := authService.AuthenticateUser(context.Background(), "user1", "password")
 
 	assert.Error(t, err)
 	assert.Nil(t, user)

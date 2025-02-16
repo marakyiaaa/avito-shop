@@ -1,15 +1,16 @@
 package service
 
 import (
-	"avito_shop/internal/middleware"
-	"avito_shop/internal/models/entities"
-	"avito_shop/internal/repository"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
 	"log"
+
+	"avito_shop/internal/middleware"
+	"avito_shop/internal/models/entities"
+	"avito_shop/internal/repository"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // AuthService определяет методы для аутентификации пользователей.
@@ -32,15 +33,13 @@ func NewAuthService(userRepo repository.UserRepository, secretKey string) AuthSe
 
 // AuthenticateUser проверяет учетные данные пользователя и генерирует JWT-токен.
 func (s *authService) AuthenticateUser(ctx context.Context, username, password string) (*entities.User, string, error) {
-	// Получаем пользователя из БД
 	user, err := s.userRepo.GetUserByUsername(ctx, username)
 
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		log.Printf("Ошибка при получении пользователя: %v", err) // Логируем ошибку
-		return nil, "", fmt.Errorf("ошибка аутентификации: invalid username or password")
+		log.Printf("Ошибка при получении пользователя: %v", err)
+		return nil, "", fmt.Errorf("ошибка аутентификации")
 	}
 
-	// Если пользователь не найден — регистрируем его
 	if user == nil {
 		newUser := &entities.User{
 			Username: username,
@@ -52,42 +51,36 @@ func (s *authService) AuthenticateUser(ctx context.Context, username, password s
 			return nil, "", err
 		}
 
-		// После создания пользователя, снова получаем его из БД
 		user, err = s.userRepo.GetUserByUsername(ctx, username)
 		if err != nil {
 			log.Printf("Ошибка при получении пользователя после регистрации: %v", err)
-			return nil, "", fmt.Errorf("ошибка аутентификации: failed to retrieve user after registration")
+			return nil, "", fmt.Errorf("ошибка аутентификации: при получении пользователя после регистрации")
 		}
 	}
 
-	// Проверяем пароль
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return nil, "", fmt.Errorf("invalid username or password")
+		return nil, "", fmt.Errorf("ошибка аутентификации: неверный пароль")
 	}
 
-	// Генерируем JWT
 	token, err := middleware.GenerateJWT(s.secretKey, user.ID)
 	if err != nil {
 		log.Printf("Ошибка генерации токена: %v", err)
-		return nil, "", fmt.Errorf("ошибка аутентификации: failed to generate token")
+		return nil, "", fmt.Errorf("ошибка аутентификации: токен не сгенерировался")
 	}
 	return user, token, nil
 }
 
 // createUser регистрирует нового пользователя.
 func (s *authService) createUser(ctx context.Context, user *entities.User) error {
-	// Хэшируем пароль
 	hashPassword, err := s.hashPassword(user.Password)
 	if err != nil {
 		return err
 	}
-	//Записываем хэшированный пароль
 	user.Password = hashPassword
 
-	// Создаем пользователя в БД
 	if err := s.userRepo.CreateUser(ctx, user); err != nil {
-		log.Printf("Ошибка создания пользователя: %v", err)
-		return fmt.Errorf("failed to create user")
+		log.Printf("ошибка создания пользователя: %v", err)
+		return fmt.Errorf("ошибка создания пользователя")
 	}
 	return nil
 }
@@ -96,8 +89,8 @@ func (s *authService) createUser(ctx context.Context, user *entities.User) error
 func (s *authService) hashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Printf("Ошибка хеширования пароля: %v", err)
-		return "", fmt.Errorf("failed to hash password")
+		log.Printf("ошибка хеширования пароля: %v", err)
+		return "", fmt.Errorf("ошибка хеширования пароля")
 	}
 	return string(hash), nil
 }

@@ -1,28 +1,24 @@
-include .env.local
-
-build:
-	@docker compose build
+.PHONY: run down go test test_k6 cover check
 
 run:
 	@docker compose up -d
 
-del:
+down:
 	@docker compose down -v
 
-inf:
+info_docker:
 	docker ps -a
 	docker images
 	docker volume ls
-
-
-#topic:
-#	@docker exec kafka kafka-topics --bootstrap-server kafka:9092 --create --topic orders
 
 go:
 	@go run cmd/main.go
 
 test:
 	@go test -coverprofile=coverage.out ./...
+
+test_k6:
+	 @k6 run loadtest.js
 
 cover:
 	@go tool cover -func=coverage.out
@@ -32,30 +28,9 @@ check:
 	@golint ./...
 	@errcheck ./...
 
+#golangci-lint run
 
 
 
-#brew_wrk:
-#	@brew install wrk
-
-#wrk:
-#	@wrk -t4 -c200 -d30s http://localhost:8080/api/orders
-
-
-
-
-
-
-#goose create create_orders_table sql
-
-#Откат миграций - goose down
-
-
-#goose up
-#Goose сам будет отслеживать номера версий миграций и применять их в правильной последовательности.
-
-
-
-.PHONY: build run reboot topic go test cover brew_wrk wrk check
 
 # psql -U postgres -d shop

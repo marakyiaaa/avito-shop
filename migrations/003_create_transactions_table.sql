@@ -6,6 +6,3 @@ CREATE TABLE IF NOT EXISTS transactions (
     amount INT NOT NULL CHECK (amount > 0),
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- -- +goose Down
--- DROP TABLE IF EXISTS transactions;

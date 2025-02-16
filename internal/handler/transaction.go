@@ -1,12 +1,13 @@
-package handlers
+package handler
 
 import (
+	"net/http"
+	"strconv"
+
 	"avito_shop/internal/models/api/request"
 	"avito_shop/internal/models/api/response"
 	"avito_shop/internal/service"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strconv"
 )
 
 // TransactionHandler - транзакции между пользователями
@@ -23,31 +24,27 @@ func NewTransactionHandler(transactionService service.TransactionService) *Trans
 func (h *TransactionHandler) SendCoinHandler(c *gin.Context) {
 	var req request.SendCoinRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse{Errors: "invalid request"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Errors: "невалидный запрос"})
 		return
 	}
 
-	// Добавляем проверку на отрицательное значение
 	if req.Amount <= 0 {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse{Errors: "amount must be a positive value"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Errors: "сумма должна быть положительной"})
 		return
 	}
 
-	// Получаем ID пользователя из токена
 	fromUserID := c.GetInt("user_id")
 	if fromUserID == 0 {
-		c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "user not authenticated"})
+		c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "пользователь не аутентифицирован"})
 		return
 	}
 
-	// Преобразуем имя получателя в ID (если нужно, запросить у репозитория)
 	toUserID, err := strconv.Atoi(req.ToUser)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse{Errors: "invalid recipient"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Errors: "недействительный получатель"})
 		return
 	}
 
-	// Отправляем монеты
 	err = h.transactionService.SendCoins(c, fromUserID, toUserID, req.Amount)
 	if err != nil {
 		if err.Error() == "нельзя отправлять монеты самому себе" {

@@ -1,10 +1,11 @@
 package repository
 
 import (
-	"avito_shop/internal/models/entities"
 	"context"
-	"database/sql"
 	"fmt"
+
+	"avito_shop/internal/models/entities"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // TransactionRepository определяет методы для работы с транзакциями.
@@ -16,12 +17,11 @@ type TransactionRepository interface {
 // transactionRepository реализует интерфейс TransactionRepository.
 // Использует базу данных для хранения и управления транзакциями.
 type transactionRepository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 // NewTransactionRepository создает новый экземпляр transactionRepository.
-// Принимает подключение к базе данных (*sql.DB) и возвращает реализацию TransactionRepository.
-func NewTransactionRepository(db *sql.DB) TransactionRepository {
+func NewTransactionRepository(db *pgxpool.Pool) TransactionRepository {
 	return &transactionRepository{db: db}
 }
 
@@ -30,7 +30,7 @@ func (r *transactionRepository) CreateTransaction(ctx context.Context, fromUserI
 	const query = ` INSERT INTO transactions (from_user_id, to_user_id, amount) 
 		VALUES ($1, $2, $3) RETURNING id, from_user_id, to_user_id, amount, timestamp`
 	tx := &entities.Transaction{}
-	err := r.db.QueryRowContext(ctx, query, fromUserID, toUserID, amount).Scan(&tx.ID, &tx.FromUserID, &tx.ToUserID, &tx.Amount, &tx.Timestamp)
+	err := r.db.QueryRow(ctx, query, fromUserID, toUserID, amount).Scan(&tx.ID, &tx.FromUserID, &tx.ToUserID, &tx.Amount, &tx.Timestamp)
 	if err != nil {
 		return nil, fmt.Errorf("error creating transaction: %w", err)
 	}
@@ -43,16 +43,11 @@ func (r *transactionRepository) GetUserTransactions(ctx context.Context, userID 
 		SELECT id, from_user_id, to_user_id, amount, timestamp 
 		FROM transactions 
 		WHERE from_user_id = $1 OR to_user_id = $1`
-	rows, err := r.db.QueryContext(ctx, query, userID)
+	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching transactions: %w", err)
 	}
-	defer func(rows *sql.Rows) {
-		err := rows.Close()
-		if err != nil {
-
-		}
-	}(rows)
+	defer rows.Close()
 
 	var transactions []*entities.Transaction
 	for rows.Next() {

@@ -3,12 +3,12 @@ version: '3.8'
 services:
   avito-shop-service:
     build:
-      context: .  # Путь к директории с исходниками
+      context: .
     container_name: avito-shop-service
     ports:
       - "8080:8080"
     env_file:
-      - .env.local
+      - .env
     environment:
       - DATABASE_PORT=5432
       - DATABASE_USER=postgres
