@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  avito-shop-test-service:
+    build:
+      context: .
+    container_name: avito-shop-test-service
+    env_file:
+      - .env.test
+    environment:
+      - DB_HOST=testdb
+      - DB_PORT=5432
+      - DB_USER=usertest
+      - DB_PASSWORD=password
+      - DB_NAME=shop_test
+      - SERVER_PORT=8081
+    depends_on:
+      testdb:
+        condition: service_healthy
+    networks:
+      - internal
+
+  testdb:
+    image: postgres:13
+    container_name: testdb
+    hostname: testdb
+    environment:
+      POSTGRES_USER: usertest
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: shop_test
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U usertest -d shop_test"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge

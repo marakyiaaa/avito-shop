@@ -21,7 +21,6 @@ func NewStoreHandler(service service.StoreService) *StoreHandler {
 
 // BuyItemHandler обрабатывает покупку предмета
 func (h *StoreHandler) BuyItemHandler(c *gin.Context) {
-	// Получаем userID из контекста
 	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, response.ErrorResponse{Errors: "неавторизованный"})

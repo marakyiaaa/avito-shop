@@ -1,13 +1,14 @@
 package service_test
 
 import (
-	"avito_shop/internal/models/entities"
-	"avito_shop/internal/service"
 	"context"
 	"fmt"
+	"testing"
+
+	"avito_shop/internal/models/entities"
+	"avito_shop/internal/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 // TestStoreService_BuyItem_Success Успешная покупка товара
@@ -140,7 +141,6 @@ func TestStoreService_BuyItem_AddToInventoryError(t *testing.T) {
 	mockItemRepo := new(MockItemRepository)
 	mockInventoryRepo := new(MockInventoryRepository)
 
-	// Настраиваем моки
 	expectedItem := &entities.Item{
 		ID:    1,
 		Name:  "cup",

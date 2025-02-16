@@ -35,29 +35,41 @@ func (m *MockInfoService) GetUserInfo(ctx context.Context, userID int) (*service
 }
 func TestGetUserInfoHandler(t *testing.T) {
 	mockInfoService := new(MockInfoService)
-
 	infoHandler := handler.NewInfoHandler(mockInfoService)
 
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
 	router.GET("/info", infoHandler.GetUserInfoHandler)
 
-	t.Run("пользователь не аутентифицирован", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodGet, "/info", nil)
-		if err != nil {
-			t.Fatalf("Ошибка при создании запроса: %v", err)
-		}
+	tests := []struct {
+		name           string
+		setupRequest   func() *http.Request
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name: "пользователь не аутентифицирован",
+			setupRequest: func() *http.Request {
+				req, err := http.NewRequest(http.MethodGet, "/info", nil)
+				if err != nil {
+					t.Fatalf("Ошибка при создании запроса: %v", err)
+				}
+				return req
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody:   `{"errors":"пользователь не аутентифицирован"}`,
+		},
+	}
 
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Request = req
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := tt.setupRequest()
+			w := httptest.NewRecorder()
 
-		router.ServeHTTP(w, req)
+			router.ServeHTTP(w, req)
 
-		assert.Equal(t, http.StatusUnauthorized, w.Code)
-
-		expectedBody := `{"errors":"пользователь не аутентифицирован"}`
-		assert.JSONEq(t, expectedBody, w.Body.String())
-	})
-
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			assert.JSONEq(t, tt.expectedBody, w.Body.String())
+		})
+	}
 }

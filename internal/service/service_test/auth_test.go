@@ -153,7 +153,6 @@ func TestAuthService_AuthenticateUser_CreateUserError(t *testing.T) {
 func TestAuthService_AuthenticateUser_GetUserAfterRegistrationError(t *testing.T) {
 	mockUserRepo := new(MockUserRepository)
 
-	// Настройка моков
 	mockUserRepo.On("GetUserByUsername", mock.Anything, "user1").Return((*entities.User)(nil), sql.ErrNoRows).Once()
 	mockUserRepo.On("CreateUser", mock.Anything, mock.AnythingOfType("*entities.User")).Return(nil)
 	mockUserRepo.On("GetUserByUsername", mock.Anything, "user1").Return((*entities.User)(nil), fmt.Errorf("ошибка при получении пользователя"))

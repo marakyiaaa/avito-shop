@@ -1,13 +1,14 @@
 package service_test
 
 import (
-	"avito_shop/internal/models/entities"
-	"avito_shop/internal/service"
 	"context"
 	"fmt"
+	"testing"
+
+	"avito_shop/internal/models/entities"
+	"avito_shop/internal/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 // TestTransactionService_SendCoins_Success Успешный перевод монет
@@ -146,24 +147,19 @@ func TestTransactionService_SendCoins_CreateTransactionError(t *testing.T) {
 	mockUserRepo := new(MockUserRepository)
 	mockTransactionRepo := new(MockTransactionRepository)
 
-	// Ожидаемые данные
 	fromUser := &entities.User{ID: 1, Balance: 1000}
 	toUser := &entities.User{ID: 2, Balance: 500}
 
-	// Настройка моков
 	mockUserRepo.On("GetUserByID", mock.Anything, 1).Return(fromUser, nil)
 	mockUserRepo.On("GetUserByID", mock.Anything, 2).Return(toUser, nil)
 	mockUserRepo.On("UpdateUserBalance", mock.Anything, 1, 900).Return(nil)
 	mockUserRepo.On("UpdateUserBalance", mock.Anything, 2, 600).Return(nil)
 	mockTransactionRepo.On("CreateTransaction", mock.Anything, 1, 2, 100).Return((*entities.Transaction)(nil), fmt.Errorf("ошибка создания транзакции"))
 
-	// Создаем сервис
 	transactionService := service.NewTransactionService(mockUserRepo, mockTransactionRepo)
 
-	// Вызываем метод
 	err := transactionService.SendCoins(context.Background(), 1, 2, 100)
 
-	// Проверяем результат
 	assert.Error(t, err)
 	assert.Equal(t, "не удалось записать транзакцию: ошибка создания транзакции", err.Error())
 	mockUserRepo.AssertExpectations(t)

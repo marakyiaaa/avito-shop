@@ -31,21 +31,37 @@ func TestBuyItemHandler(t *testing.T) {
 	router := gin.Default()
 	router.POST("/buy/:item", storeHandler.BuyItemHandler)
 
-	t.Run("пользователь не аутентифицирован", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodPost, "/buy/cup", nil)
-		if err != nil {
-			t.Fatalf("Ошибка при создании запроса: %v", err)
-		}
+	tests := []struct {
+		name           string
+		method         string
+		url            string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "пользователь не аутентифицирован",
+			method:         http.MethodPost,
+			url:            "/buy/cup",
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody:   `{"errors":"неавторизованный"}`,
+		},
+	}
 
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Request = req
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest(tt.method, tt.url, nil)
+			if err != nil {
+				t.Fatalf("Ошибка при создании запроса: %v", err)
+			}
 
-		router.ServeHTTP(w, req)
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request = req
 
-		assert.Equal(t, http.StatusUnauthorized, w.Code)
+			router.ServeHTTP(w, req)
 
-		expectedBody := `{"errors":"неавторизованный"}`
-		assert.JSONEq(t, expectedBody, w.Body.String())
-	})
+			assert.Equal(t, tt.expectedStatus, w.Code)
+			assert.JSONEq(t, tt.expectedBody, w.Body.String())
+		})
+	}
 }
